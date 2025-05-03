@@ -16,7 +16,12 @@ logger = logging.getLogger(__name__)
 producer = Producer({'bootstrap.servers': os.environ.get('KAFKA_CLIENT')}) # kafka client
 BUFFER = []
 FLUSH_INTERVAL = timedelta(seconds=int(os.environ.get('FLUSH_INTERVAL')))
+stop_event = threading.Event()  # event to signal the thread to stop
 
+
+def failure_report(err, msg):
+    if err is not None:
+        logger.error(f"Message delivery failed for the message: {msg} with {err}")
 
 def flush_to_kafka():
     global BUFFER
@@ -41,7 +46,8 @@ def flush_to_kafka():
                 value=json.dumps({
                     'Captured Time': captured_time,
                     'Records': record
-                }).encode('utf-8')
+                }).encode('utf-8'),
+                callback=failure_report
             )
             time.sleep(float(os.environ.get('SUBMISSION_INTERVAL')))  # simulate delay between messages
         producer.flush()  # Ensure all messages are sent
@@ -53,7 +59,7 @@ def periodic_flush():
     while True:
         logger.info(f"Periodic flush called at time: {datetime.now()}")
         flush_to_kafka()
-        time.sleep(float(os.environ.get('FLUSH_INTERVAL')))  # Wait for the flush interval     
+        stop_event.wait(float(os.environ.get('FLUSH_INTERVAL')))  # Wait for the flush interval     
 
 def kafka_submission(csv_file_path):
     # Open and stream the CSV
@@ -70,6 +76,7 @@ def kafka_submission(csv_file_path):
             
             time.sleep(float(os.environ.get('MESSAGE_DELAY'))) # simulate delay between messages
 
+    stop_event.set() # signal the thread to stop after processing the CSV
     producer.flush()  # Ensure all messages are sent
     producer.close() # closes the network connections and allocated resources
 
@@ -79,3 +86,4 @@ if __name__ == "__main__":
         thread = threading.Thread(target=periodic_flush, daemon=True)
         thread.start()
         kafka_submission(csv_file_path)
+        thread.join() # wait for the thread to finish
