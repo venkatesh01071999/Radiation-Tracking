@@ -11,7 +11,7 @@ load_dotenv()
 producer = KafkaProducer(bootstrap_servers=os.environ.get('KAFKA_CLIENT')) # kafka client
 
 
-csv_file_path = os.environ.get('CSV_FILE')  # Path to CSV file
+csv_file_path = os.environ.get('PROCESSED_FILE')  # Path to reversed CSV file
 
 # Open and stream the CSV
 with open(csv_file_path, 'r') as file:
