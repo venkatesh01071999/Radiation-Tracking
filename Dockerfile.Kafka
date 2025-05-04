@@ -1,0 +1,9 @@
+FROM python:3.13-slim
+
+WORKDIR /app/kafka
+
+COPY app/kafka .
+
+RUN pip install -r requirements.txt
+
+CMD ["sh", "-c", "sleep 20 && python kafka_stream.py"]
