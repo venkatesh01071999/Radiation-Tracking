@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    io.kompose.service: producer
+  name: producer
+spec:
+  containers:
+    - env:
+        - name: CHUNK_FILE
+          value: /app/kafka/Data/partition-1.csv
+        - name: CSV_FILE
+          value: /app/kafka/Data/measurements-out.csv
+        - name: FLUSH_INTERVAL
+          value: "10"
+        - name: KAFKA_CLIENT
+          value: kafka:9092
+        - name: KAFKA_TOPIC
+          value: radiation-topic
+        - name: MESSAGE_DELAY
+          value: "0.5"
+        - name: PROCESSED_FILE
+          value: /app/kafka/Data/processed.csv
+        - name: SUBMISSION_INTERVAL
+          value: "0.5"
+      image: bdacr2025.azurecr.io/producer:v1 # pushed image to ACR
+      name: producer
+  restartPolicy: Never

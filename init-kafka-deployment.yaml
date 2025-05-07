@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    io.kompose.service: init-kafka
+  name: init-kafka
+spec:
+  containers:
+    - args:
+        - |2
+          cd /opt/kafka/bin
+          ./kafka-topics.sh --create --topic radiation-topic -bootstrap-server kafka:9092 -partitions 1 --replication-factor 1
+      command:
+        - /bin/bash
+        - -c
+      image: apache/kafka:latest
+      name: init-kafka
+  restartPolicy: Never
