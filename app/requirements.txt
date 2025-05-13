@@ -1,3 +1,4 @@
 kafka-python
 confluent-kafka
 dotenv
+pyflink
