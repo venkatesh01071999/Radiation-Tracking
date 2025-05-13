@@ -1,4 +1,5 @@
 kafka-python
 confluent-kafka
 dotenv
-pyflink
+apache-flink==1.18.0
+avro-python3==1.10.2

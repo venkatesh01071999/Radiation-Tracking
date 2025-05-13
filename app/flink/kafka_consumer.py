@@ -1,47 +1,60 @@
-import os
-import json
-from pyflink.common import Configuration, WatermarkStrategy
 from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer
+from pyflink.datastream.connectors.kafka import KafkaSource, KafkaSink, KafkaRecordSerializationSchema, KafkaOffsetsInitializer
 from pyflink.common.serialization import SimpleStringSchema
-from pyflink.datastream import CheckpointingMode
+from pyflink.common import WatermarkStrategy
+from pyflink.common.typeinfo import Types
+from dotenv import load_dotenv
+import os
 
-def main():
-    # Set up Flink config to include Kafka connector JAR if needed
-    config = Configuration()
-    config.set_string(
-        "pipeline.jars",
-        "file:///Users/kunalchavan/Desktop/bd/bd25_project_m2_c/app/flink/flink-connector-kafka-3.0.1-1.18.jar"
+load_dotenv()
+
+def kafka_to_kafka_json():
+    env = StreamExecutionEnvironment.get_execution_environment()
+    env.add_jars(
+        os.environ.get('KAFKA_CLIENT_JAR'),
+        os.environ.get('KAFKA_CONNECTOR'),
     )
-
-    env = StreamExecutionEnvironment.get_execution_environment(config)
     env.set_parallelism(1)
 
-    # Enable checkpointing
-    env.enable_checkpointing(10000, CheckpointingMode.EXACTLY_ONCE)
+    kafka_brokers = os.environ.get('KAFKA_CLIENT')
 
-    kafka_bootstrap_servers = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-    kafka_topic = os.environ.get("KAFKA_TOPIC", "radiation-topic")
+    input_topic = os.environ.get('KAFKA_TOPIC')
+    
+    output_topic = os.environ.get('PROCESSED_TOPIC')
 
-    # Configure Kafka Consumer with SimpleStringSchema
-    kafka_consumer = FlinkKafkaConsumer(
-        topics=kafka_topic,
-        deserialization_schema=SimpleStringSchema(),
-        properties={
-            'bootstrap.servers': kafka_bootstrap_servers,
-            'group.id': os.environ.get("KAFKA_GROUP_ID", "flink-consumer-group"),
-            'auto.offset.reset': 'earliest'
-        }
+    # Kafka Consumer
+    kafka_source = KafkaSource.builder() \
+        .set_bootstrap_servers(kafka_brokers) \
+        .set_topics(input_topic) \
+        .set_group_id("flink-group") \
+        .set_value_only_deserializer(SimpleStringSchema()) \
+        .set_starting_offsets(KafkaOffsetsInitializer.latest())  \
+        .build()
+    # Kafka Producer
+    kafka_sink = KafkaSink.builder() \
+        .set_bootstrap_servers(kafka_brokers) \
+        .set_record_serializer(
+            KafkaRecordSerializationSchema.builder()
+            .set_topic(output_topic)
+            .set_value_serialization_schema(SimpleStringSchema())
+            .build()
+        )  \
+        .build()
+
+    def custom_map(json_data):
+        print("Processing JSON data: ", json_data)
+        return json_data
+
+    # Create the data stream
+    stream = env.from_source(
+        source=kafka_source,
+        watermark_strategy=WatermarkStrategy.no_watermarks(),
+        source_name="KafkaSource"
     )
 
-    # Add source and parse JSON manually
-    ds = env.add_source(kafka_consumer).name("Kafka Source")
-    parsed = ds.map(lambda x: json.loads(x)).name("Parse JSON")
+    stream.map(custom_map, output_type=Types.STRING()).sink_to(kafka_sink)
 
-    # Log the parsed output
-    parsed.map(lambda x: f"Received record: {x}").print()
+    env.execute("Kafka to Kafka JSON Streaming Job")
 
-    env.execute("Kafka to Flink Pipeline")
-
-if __name__ == "__main__":
-    main()
+if _name_ == '_main_':
+    kafka_to_kafka_json()
