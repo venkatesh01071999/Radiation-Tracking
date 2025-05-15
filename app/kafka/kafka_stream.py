@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta
 import logging
 import threading
+from copy import deepcopy
 
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 producer = Producer({'bootstrap.servers': os.environ.get('KAFKA_CLIENT')}) # kafka client
 BUFFER = []
+lock = threading.Lock()
 FLUSH_INTERVAL = timedelta(seconds=int(os.environ.get('FLUSH_INTERVAL')))
 stop_event = threading.Event()  # event to signal the thread to stop
 
@@ -27,12 +29,15 @@ def flush_to_kafka():
     global BUFFER
 
     if BUFFER:
+        with lock:
+            process_buffer = deepcopy(BUFFER)  # Create a copy of the buffer to process
+            BUFFER.clear()  # Clear the original buffer
         logger.info(f"Flushing begins at time: {datetime.now()}")
-        BUFFER.sort(key=lambda x: x['Captured Time'])  # Sort by Captured Time
+        process_buffer.sort(key=lambda x: x['Captured Time'])  # Sort by Captured Time
 
         # Group records by 'Captured Time'
         grouped_records = {}
-        for record in BUFFER:
+        for record in process_buffer:
             captured_time = record['Captured Time']
             if captured_time not in grouped_records:
                 grouped_records[captured_time] = []
@@ -51,7 +56,6 @@ def flush_to_kafka():
             )
             time.sleep(float(os.environ.get('SUBMISSION_INTERVAL')))  # simulate delay between messages
         producer.flush()  # Ensure all messages are sent
-        BUFFER = [] # clear the buffer after sending
         logger.info(f"Flushing ends at time: {datetime.now()}")
 
 
@@ -72,7 +76,8 @@ def kafka_submission(csv_file_path):
             logger.info(f"Processing row {index + 1}")
             if row[0] is None or row[0] == '': # skip null or empty rows
                 continue
-            BUFFER.append({header[i]: row[i] for i in range(len(header))})            
+            with lock:
+                BUFFER.append({header[i]: row[i] for i in range(len(header))})            
             
             time.sleep(float(os.environ.get('MESSAGE_DELAY'))) # simulate delay between messages
 
