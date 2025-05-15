@@ -17,5 +17,5 @@ with open(os.environ.get('CONFIG_FILE'), 'r') as file:
         topic, 
         value=json.dumps(config).encode('utf-8'),
     )
-    producer.flush()
+    producer.flush() # flushes remaining messages
     logger.info(f"Config: {config} sent to Kafka topic: {topic}")
