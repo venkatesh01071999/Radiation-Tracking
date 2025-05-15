@@ -1,0 +1,14 @@
+{
+    "boundingbox": [
+        "48.5518081",
+        "51.0557008",
+        "12.0905752",
+        "18.8592531"
+    ],
+    "country": "Czech Republic",
+    "threshold": 40,
+    "timeframe": {
+        "start": "01-07-2024 00:00:00"
+    },
+    "speed": 10
+}
