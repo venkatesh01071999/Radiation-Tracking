@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    io.kompose.service: kafka-consumer
+  name: kafka-consumer
+spec:
+  containers:
+    - args:
+        - |2
+          cd /opt/kafka/bin
+          ./kafka-console-consumer.sh --from-beginning --bootstrap-server kafka:9092 --topic radiation-topic
+      command:
+        - /bin/bash
+        - -c
+      image: apache/kafka:latest
+      name: kafka-consumer
+  restartPolicy: Never
