@@ -56,5 +56,5 @@ def kafka_to_kafka_json():
 
     env.execute("Kafka to Kafka JSON Streaming Job")
 
-if __name__ == '_main_':
+if __name__ == '__main__':
     kafka_to_kafka_json()
