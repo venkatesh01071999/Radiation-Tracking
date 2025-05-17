@@ -8,23 +8,57 @@ from pyflink.common.typeinfo import Types
 from dotenv import load_dotenv
 import json
 import os
+from datetime import datetime
+import logging
 
 load_dotenv()
+logging.basicConfig(level = logging.INFO)
+logger = logging.getLogger(__name__)
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # KeyedBroadcastProcessFunction must be inherited if we are connecting a broadcast stream with a keyed stream
 class DynamicFilterFunction(KeyedBroadcastProcessFunction):
+    global TIME_FORMAT
     def __init__(self, config_descriptor):
         self.config_descriptor = config_descriptor
 
     def process_broadcast_element(self, value, ctx): # broadcast stream
         config = json.loads(value)
+        logger.info(f"Received config: {config}")
         bc_state = ctx.get_broadcast_state(self.config_descriptor) # Get the latest broadcast state
-        for key, val in config.items():
-            bc_state.put(key, str(val)) # Update the broadcast state with the new configuration
+        user_id = config.pop("user")
+        bc_state.put(user_id, json.dumps(config)) # Store the config in the broadcast state
+
+    def _operators(self, event, config):
+        default_return = True
+        # OPERATOR 1 - Time Based Filtering
+        if "timeframe" in config:
+            start_time, end_time = datetime.strptime(config["timeframe"].get("start"), TIME_FORMAT), \
+                    datetime.strptime(config["timeframe"].get("end", datetime.now().strftime("%Y-%m-%d %H:%M:%S")), TIME_FORMAT)
+
+            captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT) 
+
+            if captured_time < start_time or captured_time > end_time:
+                default_return = False
+        
+        return default_return
+            
+
 
     def process_element(self, value, ctx): # main data stream
         event = json.loads(value)
+        logger.info(f"Received event: {event}")
+        records = event.get("Records", [])
         bc_state = ctx.get_broadcast_state(self.config_descriptor)
+
+        for user in bc_state.keys():
+            config = json.loads(bc_state.get(user))
+            for record in records:
+                if self._operators(record, config):
+                    record_copy = record.copy()
+                    record_copy["user"] = user
+                    yield json.dumps(record_copy)
+
         
 
 def kafka_to_kafka_json():
@@ -95,7 +129,8 @@ def kafka_to_kafka_json():
                 .connect(config_stream.broadcast(config_descriptor)) \
                 .process(DynamicFilterFunction(config_descriptor), output_type=Types.STRING())
 
-    processed.sink_to(kafka_sink)
+    processed.print() # For debugging purposes
+    # processed.sink_to(kafka_sink)
 
     env.execute("Flink Processing Job")
 
