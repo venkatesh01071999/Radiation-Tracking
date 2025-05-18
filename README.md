@@ -13,3 +13,8 @@
 8) python reverse_dataset.py to reverse the dataset to stream the old data first.
 9) python kafka_stream.py
 10) View the grouped data streaming in Kafka console using the command "**./kafka-console-consumer.sh --from-beginning --bootstrap-server localhost:9092 --topic topic-name**"
+
+
+## Steps to setup Flink
+1) Install JDK 11
+2) Set `JAVA_HOME` environment variable and add the **bin/** folder to the `PATH`
