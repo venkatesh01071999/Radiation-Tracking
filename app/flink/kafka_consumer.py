@@ -41,6 +41,16 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
             if captured_time < start_time or captured_time > end_time:
                 default_return = False
         
+        #OPERATOR 2 - Location Based Filtering
+        # This is a bounding box filter
+        # bounds[0] = lat_min, bounds[1] = lat_max, bounds[2] = lon_min, bounds[3] = lon_max
+        if "boundingbox" in config:
+            bounds = config["boundingbox"]
+            lat, lon = float(event['Latitude']), float(event['Longitude'])
+            if not ((bounds[0] <= lat <= bounds[1]) and
+                    (bounds[2] <= lon <= bounds[3])):
+                default_return = False
+        
         return default_return
             
 
@@ -57,6 +67,7 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                 if self._operators(record, config):
                     record_copy = record.copy()
                     record_copy["user"] = user
+                    record_copy["country"] = config.get("country", "")
                     yield json.dumps(record_copy)
 
         
