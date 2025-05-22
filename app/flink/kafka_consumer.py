@@ -82,6 +82,8 @@ def kafka_to_kafka_json():
         os.environ.get('KAFKA_CLIENT_JAR'),
         os.environ.get('KAFKA_CONNECTOR'),
     )
+
+    # Set the parallelism to 1 later overriding it in the sink
     env.set_parallelism(1)
 
     kafka_brokers = os.environ.get('KAFKA_CLIENT')
