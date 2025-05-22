@@ -31,7 +31,13 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 
     def _operators(self, event, config):
         default_return = True
-        # OPERATOR 1 - Time Based Filtering
+
+        # OPERATOR 1 - Non Null Radiation Value
+        radiation_value = event.get("Value")
+        if radiation_value is None or radiation_value == "":
+            default_return = False
+
+        # OPERATOR 2 - Time Based Filtering
         if "timeframe" in config:
             start_time, end_time = datetime.strptime(config["timeframe"].get("start"), TIME_FORMAT), \
                     datetime.strptime(config["timeframe"].get("end", datetime.now().strftime("%Y-%m-%d %H:%M:%S")), TIME_FORMAT)
@@ -41,7 +47,7 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
             if captured_time < start_time or captured_time > end_time:
                 default_return = False
         
-        #OPERATOR 2 - Location Based Filtering
+        #OPERATOR 3 - Location Based Filtering
         # This is a bounding box filter
         # bounds[0] = lat_min, bounds[1] = lat_max, bounds[2] = lon_min, bounds[3] = lon_max
         if "boundingbox" in config:
@@ -52,8 +58,6 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                 default_return = False
         
         return default_return
-            
-
 
     def process_element(self, value, ctx): # main data stream
         event = json.loads(value)
@@ -78,6 +82,8 @@ def kafka_to_kafka_json():
         os.environ.get('KAFKA_CLIENT_JAR'),
         os.environ.get('KAFKA_CONNECTOR'),
     )
+
+    # Set the parallelism to 1 later overriding it in the sink
     env.set_parallelism(1)
 
     kafka_brokers = os.environ.get('KAFKA_CLIENT')
@@ -111,6 +117,7 @@ def kafka_to_kafka_json():
         .set_record_serializer(
             KafkaRecordSerializationSchema.builder()
             .set_topic(output_topic)
+            .set_key_serialization_schema(SimpleStringSchema())
             .set_value_serialization_schema(SimpleStringSchema())
             .build()
         )  \
@@ -140,9 +147,13 @@ def kafka_to_kafka_json():
                 .connect(config_stream.broadcast(config_descriptor)) \
                 .process(DynamicFilterFunction(config_descriptor), output_type=Types.STRING())
 
-    processed.print() # For debugging purposes
-    # processed.sink_to(kafka_sink)
-
+    # Key By - creates a keyed stream based on the user id.Which is a row data
+    # Map - maps the row data into a stringified data to pass it to sink
+    # set parallelism - match ouput topic partitioning. Tells flink to run 64 instances in parallel. Each instance is like a subtask.
+    # Each subtask can write data into one partition of the topic.
+    processed.key_by(lambda x: json.loads(x).get("user"), key_type=Types.STRING())\
+        .map(lambda x: x, output_type=Types.STRING()) \
+        .sink_to(kafka_sink).set_parallelism(64)
     env.execute("Flink Processing Job")
 
 if __name__ == '__main__':
