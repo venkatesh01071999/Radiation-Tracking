@@ -86,9 +86,12 @@ class Aggregate(WindowFunction):
         if len(radiations) != 0:
             # Aggregation 1
             avg_val = sum(radiations) / len(radiations)
+            # Aggregation 2
+            max_val = max(radiations)
             yield json.dumps({
                 "user_id": key,
-                "avg_radiation": avg_val
+                "avg_radiation": avg_val,
+                "max_radiation": max_val,
             })
     
 
