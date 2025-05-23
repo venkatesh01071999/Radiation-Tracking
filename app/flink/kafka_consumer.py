@@ -3,7 +3,9 @@ from pyflink.datastream.connectors.kafka import KafkaSource, KafkaSink, KafkaRec
 from pyflink.common.serialization import SimpleStringSchema
 from pyflink.common import WatermarkStrategy
 from pyflink.datastream.state import MapStateDescriptor
-from pyflink.datastream.functions import KeyedBroadcastProcessFunction
+from pyflink.datastream.functions import KeyedBroadcastProcessFunction, WindowFunction
+from pyflink.datastream.window import TumblingProcessingTimeWindows
+from pyflink.common.time import Time
 from pyflink.common.typeinfo import Types
 from dotenv import load_dotenv
 import json
@@ -74,7 +76,21 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                     record_copy["country"] = config.get("country", "")
                     yield json.dumps(record_copy)
 
-        
+class Aggregate(WindowFunction):
+    def apply(self, key, window, inputs):
+        radiations = []
+        for data in inputs:
+            data = json.loads(data)
+            radiations.append(float(data.get("Value")))
+
+        if len(radiations) != 0:
+            # Aggregation 1
+            avg_val = sum(radiations) / len(radiations)
+            yield json.dumps({
+                "user_id": key,
+                "avg_radiation": avg_val
+            })
+    
 
 def kafka_to_kafka_json():
     env = StreamExecutionEnvironment.get_execution_environment()
@@ -94,7 +110,9 @@ def kafka_to_kafka_json():
     
     output_topic = os.environ.get('PROCESSED_TOPIC')
 
-    # Kafka Consumer
+    agg_topic = os.environ.get('AGGREGATE_TOPIC')
+
+    # Kafka Data Source
     kafka_source = KafkaSource.builder() \
         .set_bootstrap_servers(kafka_brokers) \
         .set_topics(input_topic) \
@@ -103,7 +121,7 @@ def kafka_to_kafka_json():
         .set_starting_offsets(KafkaOffsetsInitializer.latest())  \
         .build()
     
-    # Kafka Config Consumer
+    # Kafka Config Source
     kafka_source_config = KafkaSource.builder() \
         .set_bootstrap_servers(kafka_brokers) \
         .set_topics(config_topic) \
@@ -111,7 +129,8 @@ def kafka_to_kafka_json():
         .set_value_only_deserializer(SimpleStringSchema()) \
         .set_starting_offsets(KafkaOffsetsInitializer.latest())  \
         .build()
-    # Kafka Producer
+    
+    # Kafka Processed Sink
     kafka_sink = KafkaSink.builder() \
         .set_bootstrap_servers(kafka_brokers) \
         .set_record_serializer(
@@ -122,6 +141,19 @@ def kafka_to_kafka_json():
             .build()
         )  \
         .build()
+    
+    # Kafka Agg Sink
+    kafka_sink_agg = KafkaSink.builder() \
+        .set_bootstrap_servers(kafka_brokers) \
+        .set_record_serializer(
+            KafkaRecordSerializationSchema.builder()
+                .set_topic(agg_topic)
+                .set_key_serialization_schema(SimpleStringSchema())
+                .set_value_serialization_schema(SimpleStringSchema())
+                .build()
+        ) \
+        .build()
+
 
     # Create the data stream
     stream = env.from_source(
@@ -151,9 +183,19 @@ def kafka_to_kafka_json():
     # Map - maps the row data into a stringified data to pass it to sink
     # set parallelism - match ouput topic partitioning. Tells flink to run 64 instances in parallel. Each instance is like a subtask.
     # Each subtask can write data into one partition of the topic.
-    processed.key_by(lambda x: json.loads(x).get("user"), key_type=Types.STRING())\
-        .map(lambda x: x, output_type=Types.STRING()) \
+    keyed_stream = processed.key_by(lambda x: json.loads(x).get("user"), key_type=Types.STRING())\
+    
+    keyed_stream.map(lambda x: x, output_type=Types.STRING()) \
         .sink_to(kafka_sink).set_parallelism(64)
+    
+    # Aggregating for 10 seconds
+    agg_data = keyed_stream \
+        .window(TumblingProcessingTimeWindows.of(Time.seconds(10))) \
+        .apply(Aggregate(), output_type=Types.STRING()) \
+    
+    agg_data.print()
+    agg_data.sink_to(kafka_sink_agg).set_parallelism(64)
+    
     env.execute("Flink Processing Job")
 
 if __name__ == '__main__':
