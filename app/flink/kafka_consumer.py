@@ -78,21 +78,24 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 
 class Aggregate(WindowFunction):
     def apply(self, key, window, inputs):
-        radiations = []
+        min_val, min_data = float("inf"), None
         for data in inputs:
             data = json.loads(data)
-            radiations.append(float(data.get("Value")))
+            radiation_value = float(data.get("Value"))
+            # AGGREGATION - Find the minimum radiation value
+            if radiation_value < min_val:
+                min_val = radiation_value
+                min_data = {
+                    "lat": data.get("Latitude"),
+                    "lon": data.get("Longitude"),
+                    "time": data.get("Captured Time"),
+                    "value": min_val
+                }
 
-        if len(radiations) != 0:
-            # Aggregation 1
-            avg_val = sum(radiations) / len(radiations)
-            # Aggregation 2
-            max_val = max(radiations)
-            yield json.dumps({
-                "user_id": key,
-                "avg_radiation": avg_val,
-                "max_radiation": max_val,
-            })
+        yield json.dumps({
+            "user_id": key,
+            "min_radiation": min_data
+        })
     
 
 def kafka_to_kafka_json():
