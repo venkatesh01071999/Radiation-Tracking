@@ -79,9 +79,12 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 class Aggregate(WindowFunction):
     def apply(self, key, window, inputs):
         min_val, min_data = float("inf"), None
+        sum_val, count = 0, 0
         for data in inputs:
+            count += 1
             data = json.loads(data)
             radiation_value = float(data.get("Value"))
+            sum_val += radiation_value
             # AGGREGATION - Find the minimum radiation value
             if radiation_value < min_val:
                 min_val = radiation_value
@@ -94,7 +97,12 @@ class Aggregate(WindowFunction):
 
         yield json.dumps({
             "user_id": key,
-            "min_radiation": min_data
+            "min_radiation": min_data,
+            "Average":{
+                "value": sum_val / count if count > 0 else 0, # Avoid division by zero
+                "count": count,
+                "sum": sum_val
+            }
         })
     
 
