@@ -58,9 +58,29 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
             if not ((bounds[0] <= lat <= bounds[1]) and
                     (bounds[2] <= lon <= bounds[3])):
                 default_return = False
+                
+         #OPERATOR 4 - COLOR MAPING(RED/GREEN FOR THRESHOLD VALUE)
+        threshold = config.get("threshold")
+        if threshold is not None:
+            try:
+                threshold = float(threshold)
+                radiation_value = float(event["Value"])
+                
+                if radiation_value > threshold:
+                    event["status"] = "red"
+                elif radiation_value < threshold:
+                    event["status"] = "green"
+                else:      # Equal to threshold
+                    event["status"] = "both"
+            except ValueError:
+                event["status"] = "invalid"
+                logger.warning(f"Invalid radiation value: {event['Value']}")
+        else:
+            event["status"] = "unknown"
+            return True
         
         return default_return
-
+    
     def process_element(self, value, ctx): # main data stream
         event = json.loads(value)
         logger.info(f"Received event: {event}")
@@ -81,9 +101,11 @@ class Aggregate(WindowFunction):
         min_val, min_data = float("inf"), None
         max_val, max_data = float("-inf"), None
         sum_val, count = 0, 0
+        values = [] 
         for data in inputs:
             data = json.loads(data)
             radiation_value = float(data.get("Value"))
+            values.append(radiation_value)
             # AGGREGATION - Logic for Average radiation value
             sum_val += radiation_value
             count += 1
@@ -105,7 +127,11 @@ class Aggregate(WindowFunction):
                     "time": data.get("Captured Time"),
                     "value": max_val
                 }
-
+            # AGGREGATION - FIND THE Standard deviation - to find variability of radidation values
+            mean = sum_val / count if count > 0 else 0
+            variance = sum((x - mean) ** 2 for x in values) / count if count > 0 else 0
+            stddev = variance ** 0.5
+            
         yield json.dumps({
             "user_id": key,
             "min_radiation": min_data,
@@ -115,6 +141,7 @@ class Aggregate(WindowFunction):
                 "count": count,
                 "sum": sum_val
             }
+            "stddev": stddev 
         })
     
 
