@@ -59,27 +59,50 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                     (bounds[2] <= lon <= bounds[3])):
                 default_return = False
                 
-         #OPERATOR 4 - COLOR MAPING(RED/GREEN FOR THRESHOLD VALUE)
+        #OPERATOR 4 - THRESHOLDTYPE-BASED COLOR TAGGING AND FILTERING
+        # OPERATOR 4 - Threshold-Based Color Tagging and Filtering
         threshold = config.get("threshold")
+        threshold_type = config.get("threshold-type", "both")
+
         if threshold is not None:
             try:
                 threshold = float(threshold)
-                radiation_value = float(event["Value"])
-                
+            except ValueError:
+                event["status"] = "invalid"
+                return False
+
+            if threshold_type == "both":
+            # No filtering, just tagging
                 if radiation_value > threshold:
                     event["status"] = "red"
                 elif radiation_value < threshold:
                     event["status"] = "green"
-                else:      # Equal to threshold
+                else:
                     event["status"] = "both"
-            except ValueError:
-                event["status"] = "invalid"
-                logger.warning(f"Invalid radiation value: {event['Value']}")
+
+            elif threshold_type == "above":
+                if radiation_value > threshold:
+                    event["status"] = "red"
+                    return True
+                else:
+                    return False
+
+            elif threshold_type == "below":
+                if radiation_value < threshold:
+                    event["status"] = "green"
+                    return True
+                else:
+                    return False
+
+            else:
+                event["status"] = "unknown"
+                return False
+
         else:
             event["status"] = "unknown"
-            return True
-        
+
         return default_return
+
     
     def process_element(self, value, ctx): # main data stream
         event = json.loads(value)
@@ -127,10 +150,11 @@ class Aggregate(WindowFunction):
                     "time": data.get("Captured Time"),
                     "value": max_val
                 }
-            # AGGREGATION - FIND THE Standard deviation - to find variability of radidation values
-            mean = sum_val / count if count > 0 else 0
-            variance = sum((x - mean) ** 2 for x in values) / count if count > 0 else 0
-            stddev = variance ** 0.5
+                
+        # AGGREGATION - FIND THE Standard deviation - to find variability of radidation values
+        mean = sum_val / count if count > 0 else 0
+        variance = sum((x - mean) ** 2 for x in values) / count if count > 0 else 0
+        stddev = variance ** 0.5
             
         yield json.dumps({
             "user_id": key,
@@ -140,7 +164,7 @@ class Aggregate(WindowFunction):
                 "value": sum_val / count if count > 0 else 0, # Avoid division by zero
                 "count": count,
                 "sum": sum_val
-            }
+            },
             "stddev": stddev 
         })
     
