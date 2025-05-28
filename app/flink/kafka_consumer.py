@@ -60,7 +60,6 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                 default_return = False
                 
         #OPERATOR 4 - THRESHOLDTYPE-BASED COLOR TAGGING AND FILTERING
-        # OPERATOR 4 - Threshold-Based Color Tagging and Filtering
         threshold = config.get("threshold")
         threshold_type = config.get("threshold-type", "both")
 
