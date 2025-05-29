@@ -93,8 +93,7 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                     return False
 
 
-        else:
-            return default_return
+        return default_return
 
     
     def process_element(self, value, ctx): # main data stream
