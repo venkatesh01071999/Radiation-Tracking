@@ -120,10 +120,11 @@ class Aggregate(WindowFunction):
 
 def kafka_to_kafka_json():
     env = StreamExecutionEnvironment.get_execution_environment()
-    env.add_jars(
-        os.environ.get('KAFKA_CLIENT_JAR'),
-        os.environ.get('KAFKA_CONNECTOR'),
-    )
+    if os.environ.get('KAFKA_CLIENT_JAR') and os.environ.get('KAFKA_CONNECTOR'):
+        env.add_jars(
+            os.environ.get('KAFKA_CLIENT_JAR'),
+            os.environ.get('KAFKA_CONNECTOR')
+        )
 
     # Set the parallelism to 1 later overriding it in the sink
     env.set_parallelism(1)
