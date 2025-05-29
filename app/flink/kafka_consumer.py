@@ -74,10 +74,9 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
             # No filtering, just tagging
                 if radiation_value > threshold:
                     event["status"] = "red"
-                elif radiation_value < threshold:
-                    event["status"] = "green"
                 else:
-                    event["status"] = "both"
+                    event["status"] = "green"
+                return True
 
             elif threshold_type == "above":
                 if radiation_value > threshold:
@@ -93,14 +92,9 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                 else:
                     return False
 
-            else:
-                event["status"] = "unknown"
-                return False
 
         else:
-            event["status"] = "unknown"
-
-        return default_return
+            return default_return
 
     
     def process_element(self, value, ctx): # main data stream

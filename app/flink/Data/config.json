@@ -8,7 +8,7 @@
     ],
     "country": "Czech Republic",
     "threshold": 40,
-    "threshold_type":"both",
+    "threshold-type":"both",
     "timeframe": {
         "start": "2024-07-01 00:00:00"
     },
