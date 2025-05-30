@@ -72,21 +72,21 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 
             if threshold_type == "both":
             # No filtering, just tagging
-                if radiation_value > threshold:
+                if float(radiation_value) > threshold:
                     event["status"] = "red"
                 else:
                     event["status"] = "green"
                 return True
 
             elif threshold_type == "above":
-                if radiation_value > threshold:
+                if float(radiation_value) > threshold:
                     event["status"] = "red"
                     return True
                 else:
                     return False
 
             elif threshold_type == "below":
-                if radiation_value < threshold:
+                if float(radiation_value) < threshold:
                     event["status"] = "green"
                     return True
                 else:
