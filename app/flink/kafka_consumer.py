@@ -33,6 +33,8 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 
     def _operators(self, event, config):
         default_return = True
+        captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT) 
+        event['timestamp'] = captured_time.timestamp()  # Add timestamp for easier processing
 
         # OPERATOR 1 - Non Null Radiation Value
         radiation_value = event.get("Value")
@@ -43,8 +45,6 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         if "timeframe" in config:
             start_time, end_time = datetime.strptime(config["timeframe"].get("start"), TIME_FORMAT), \
                     datetime.strptime(config["timeframe"].get("end", datetime.now().strftime("%Y-%m-%d %H:%M:%S")), TIME_FORMAT)
-
-            captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT) 
 
             if captured_time < start_time or captured_time > end_time:
                 default_return = False
