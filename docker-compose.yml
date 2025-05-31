@@ -6,6 +6,8 @@ services:
     ports:
       - "9092:9092"
     container_name: kafka
+    networks:
+      - common-network
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -22,13 +24,74 @@ services:
 
   init-kafka:
     image: apache/kafka:latest
+    networks:
+      - common-network
     depends_on:
       - kafka
-    entrypoint: ["/bin/bash", "-c"]
-    command: |
+    entrypoint: |
+      bash -c "
+        echo 'Waiting for Kafka to be ready...'
+        sleep 10
+        echo 'Creating topics...'
+        /opt/kafka/bin/kafka-topics.sh --create --topic radiation-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic configuration-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic processed-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic aggregate-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
+        echo 'Topics created successfully'
       "
-      cd /opt/kafka/bin
-      ./kafka-topics.sh --create --topic radiation-topic -bootstrap-server kafka:9092 -partitions 1 --replication-factor 1
+
+  jobmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile.Flink
+    container_name: flink-jobmanager
+    networks:
+      - common-network
+    depends_on:
+      - init-kafka
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: jobmanager
+
+  taskmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile.Flink
+    container_name: flink-taskmanager
+    networks:
+      - common-network
+    depends_on:
+      - jobmanager
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: jobmanager
+      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "64" # same as the number of partitions
+    command: taskmanager -Dtaskmanager.numberOfTaskSlots=64
+
+  submit_job:
+    build:
+      context: .
+      dockerfile: Dockerfile.Flink
+    container_name: flink-submit-job
+    networks:
+      - common-network
+    depends_on:
+      - taskmanager
+    environment:
+      KAFKA_CLIENT: kafka:9092
+      KAFKA_TOPIC: radiation-topic
+      CONFIG_TOPIC: configuration-topic
+      PROCESSED_TOPIC: processed-topic
+      AGGREGATE_TOPIC: aggregate-topic
+      CONFIG_FILE: /opt/flink_app/Data/config.json
+      FLINK_PROPERTIES: "jobmanager.rpc.address: jobmanager"
+    entrypoint: |
+      bash -c "
+        sleep 15
+        flink run -d -py kafka_consumer.py --jobmanager jobmanager:8081
+        sleep 10
+        python init_config.py
       "
 
   producer:
@@ -36,8 +99,10 @@ services:
       context: .
       dockerfile: Dockerfile.Kafka
     container_name: producer
+    networks:
+      - common-network
     depends_on:
-      - init-kafka
+      - submit_job
     environment:
       KAFKA_CLIENT: kafka:9092
       CSV_FILE: /app/kafka/Data/measurements-out.csv
@@ -47,3 +112,7 @@ services:
       MESSAGE_DELAY: 0.5
       FLUSH_INTERVAL: 10
       SUBMISSION_INTERVAL: 0.5
+
+networks:
+  common-network:
+    driver: bridge

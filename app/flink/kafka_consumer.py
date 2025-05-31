@@ -33,6 +33,8 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 
     def _operators(self, event, config):
         default_return = True
+        captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT) 
+        event['timestamp'] = captured_time.timestamp()  # Add timestamp for easier processing
 
         # OPERATOR 1 - Non Null Radiation Value
         radiation_value = event.get("Value")
@@ -43,8 +45,6 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         if "timeframe" in config:
             start_time, end_time = datetime.strptime(config["timeframe"].get("start"), TIME_FORMAT), \
                     datetime.strptime(config["timeframe"].get("end", datetime.now().strftime("%Y-%m-%d %H:%M:%S")), TIME_FORMAT)
-
-            captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT) 
 
             if captured_time < start_time or captured_time > end_time:
                 default_return = False
@@ -72,21 +72,21 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 
             if threshold_type == "both":
             # No filtering, just tagging
-                if radiation_value > threshold:
+                if float(radiation_value) > threshold:
                     event["status"] = "red"
                 else:
                     event["status"] = "green"
                 return True
 
             elif threshold_type == "above":
-                if radiation_value > threshold:
+                if float(radiation_value) > threshold:
                     event["status"] = "red"
                     return True
                 else:
                     return False
 
             elif threshold_type == "below":
-                if radiation_value < threshold:
+                if float(radiation_value) < threshold:
                     event["status"] = "green"
                     return True
                 else:
@@ -163,10 +163,11 @@ class Aggregate(WindowFunction):
 
 def kafka_to_kafka_json():
     env = StreamExecutionEnvironment.get_execution_environment()
-    env.add_jars(
-        os.environ.get('KAFKA_CLIENT_JAR'),
-        os.environ.get('KAFKA_CONNECTOR'),
-    )
+    if os.environ.get('KAFKA_CLIENT_JAR') and os.environ.get('KAFKA_CONNECTOR'):
+        env.add_jars(
+            os.environ.get('KAFKA_CLIENT_JAR'),
+            os.environ.get('KAFKA_CONNECTOR')
+        )
 
     # Set the parallelism to 1 later overriding it in the sink
     env.set_parallelism(1)

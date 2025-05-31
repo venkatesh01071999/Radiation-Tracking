@@ -6,4 +6,4 @@ COPY app/kafka .
 
 RUN pip install -r requirements.txt
 
-CMD ["sh", "-c", "sleep 20 && python kafka_stream.py"]
+CMD ["sh", "-c", "sleep 50 && python kafka_stream.py"]
