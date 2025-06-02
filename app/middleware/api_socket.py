@@ -16,10 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 processed_topic = os.environ.get('PROCESSED_TOPIC')
+aggregate_topic = os.environ.get('AGGREGATE_TOPIC')
 
 
 def get_partition_for_user(username: str) -> int:
-    return murmurhash2(username.encode('utf-8'), 0x9747b28c) % 64
+    return murmurhash2(username.encode('utf-8'), 0x9747b28c) % 64 # default partitionining strategy of kafka
 
 
 def create_consumer(topic: str, partition: int):
@@ -39,16 +40,48 @@ async def ws_data_stream(websocket: WebSocket):
 
     logger.info(f"Client connected: {websocket.client}")
 
-    req_body = await websocket.receive_json()
-    username = req_body.get("user")
+    qp = websocket.query_params
+    username = qp.get("user")
     partition = get_partition_for_user(username)
     consumer = create_consumer(processed_topic, partition)
-    logger.info(f"Consumer created for user {username} on partition {partition}")
+    logger.info(f"Consumer created for user {username} on partition {partition} on topic {processed_topic}")
 
 
     try:
         while True:
-            msg = consumer.poll(5.0)  # Poll for messages with a timeout of 5 seconds
+            msg = consumer.poll(1.0)  # Poll for messages with a timeout of 5 seconds
+            if msg is None:
+                await asyncio.sleep(0.1) # Sleep to avoid waiting for data indefinitely
+                continue
+            if msg.error():
+                logger.error(f"Consumer error: {msg.error()}")
+                continue
+
+            key = msg.key().decode() if msg.key() else ""
+            if key == username:
+                value = msg.value().decode()
+                await websocket.send_json(json.loads(value))
+    except WebSocketDisconnect:
+        logger.info(f"Client {username} disconnected")
+    finally:
+        consumer.close()
+
+@app.websocket("/aggregate-stream")
+async def ws_aggregate_stream(websocket: WebSocket):
+    await websocket.accept()
+
+    logger.info(f"Client connected: {websocket.client}")
+
+    qp = websocket.query_params
+    username = qp.get("user")
+    partition = get_partition_for_user(username)
+    consumer = create_consumer(aggregate_topic, partition)
+    logger.info(f"Consumer created for user {username} on partition {partition} on topic {aggregate_topic}")
+
+
+    try:
+        while True:
+            msg = consumer.poll(1.0)  # Poll for messages with a timeout of 5 seconds
             if msg is None:
                 await asyncio.sleep(0.1) # Sleep to avoid waiting for data indefinitely
                 continue
