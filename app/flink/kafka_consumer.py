@@ -8,6 +8,7 @@ from pyflink.datastream.window import TumblingProcessingTimeWindows
 from pyflink.common.time import Time
 from pyflink.common.typeinfo import Types
 from dotenv import load_dotenv
+from pyflink.table import StreamTableEnvironment, EnvironmentSettings, Schema, DataTypes
 import json
 import os
 from datetime import datetime
@@ -159,10 +160,11 @@ class Aggregate(WindowFunction):
             },
             "stddev": stddev 
         })
-    
 
 def kafka_to_kafka_json():
     env = StreamExecutionEnvironment.get_execution_environment()
+    settings = EnvironmentSettings.in_streaming_mode() # Use streaming mode for continuous data processing
+    table_env = StreamTableEnvironment.create(env, environment_settings=settings) # Create a Table Environment
     if os.environ.get('KAFKA_CLIENT_JAR') and os.environ.get('KAFKA_CONNECTOR'):
         env.add_jars(
             os.environ.get('KAFKA_CLIENT_JAR'),
@@ -255,16 +257,48 @@ def kafka_to_kafka_json():
     # Each subtask can write data into one partition of the topic.
     keyed_stream = processed.key_by(lambda x: json.loads(x).get("user"), key_type=Types.STRING())\
     
-    keyed_stream.map(lambda x: x, output_type=Types.STRING()) \
-        .sink_to(kafka_sink).set_parallelism(64)
+    mapped_stream = keyed_stream.map(lambda x: (
+        json.loads(x).get("user"),
+        x
+    ), output_type=Types.TUPLE([Types.STRING(), Types.STRING()])) \
+         
+    result_table = table_env.from_data_stream(
+        mapped_stream,
+        Schema.new_builder()
+            .column_by_expression("user", "f0")
+            .column_by_expression("radiation_data", "f1")
+            .build()
+    )
+
+    result_table = result_table.select(result_table.user, result_table.radiation_data)
+
+    table_env.execute_sql(f"""
+        CREATE TABLE processed_sink (
+            `user` STRING,
+            radiation_data STRING
+        ) WITH (
+            'connector' = 'kafka',
+            'topic' = '{os.environ.get("PROCESSED_TOPIC")}',
+            'properties.bootstrap.servers' = '{os.environ.get("KAFKA_CLIENT")}',
+            'key.format' = 'raw',
+            'key.fields' = 'user',
+            'value.format' = 'json'
+        )
+    """)
+
+    result_table.execute_insert("processed_sink")
+
     
-    # Aggregating for 10 seconds
-    agg_data = keyed_stream \
-        .window(TumblingProcessingTimeWindows.of(Time.seconds(10))) \
-        .apply(Aggregate(), output_type=Types.STRING()) \
+    # keyed_stream.map(lambda x: x, output_type=Types.STRING()) \
+    #     .sink_to(kafka_sink).set_parallelism(64)
     
-    agg_data.print()
-    agg_data.sink_to(kafka_sink_agg).set_parallelism(64)
+    # # Aggregating for 10 seconds
+    # agg_data = keyed_stream \
+    #     .window(TumblingProcessingTimeWindows.of(Time.seconds(10))) \
+    #     .apply(Aggregate(), output_type=Types.STRING()) \
+    
+    # agg_data.print()
+    # agg_data.sink_to(kafka_sink_agg).set_parallelism(64)
     
     env.execute("Flink Processing Job")
 
