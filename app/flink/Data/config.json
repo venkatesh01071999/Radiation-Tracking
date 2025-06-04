@@ -11,6 +11,5 @@
     "threshold-type":"both",
     "timeframe": {
         "start": "2024-07-01 00:00:00"
-    },
-    "speed": 10
+    }
 }
