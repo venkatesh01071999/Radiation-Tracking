@@ -11,8 +11,7 @@ from murmurhash2 import murmurhash2
 # Loading  environment variables here
 load_dotenv()
 
-# Init FastAPI
-app = FastAPI()
+
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ MAX_MESSAGES_PER_BATCH = 20 # 20 Messages per batch
 # Pydantic models for our  config.json structure
 class Timeframe(BaseModel):
     start: str = Field(..., description="Start time in 'YYYY-MM-DD HH:MM:SS' format")
-
+    end: Optional[str] = Field(None, description="Optional end time in 'YYYY-MM-DD HH:MM:SS' format")
 class Config(BaseModel):
     user: str
     boundingbox: list[float] = Field(..., min_items=4, max_items=4)
@@ -62,6 +61,26 @@ async def create_consumer(topic: str, partition: int):
     await consumer.start()
     consumer.assign([TopicPartition(topic, partition)]) # Assign the consumer to a specific partition
     return consumer
+
+# Global Kafka producer variable
+producer: AIOKafkaProducer | None = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global producer
+    producer = AIOKafkaProducer(
+        bootstrap_servers=os.environ.get('KAFKA_CLIENT')
+    )
+    await producer.start()
+    logger.info("Kafka Producer started")
+    try:
+        yield
+    finally:
+        if producer:
+            await producer.stop()
+            logger.info("Kafka Producer stopped")
+
+app = FastAPI(lifespan=lifespan)
 
 #  WebSocket Routes 
 @app.websocket("/data-stream")
@@ -155,10 +174,9 @@ async def ws_aggregate_stream(websocket: WebSocket):
 # POST API to the configuration
 @app.post("/set-config")
 async def set_config(config: Config):
-    producer = AIOKafkaProducer(
-        bootstrap_servers=os.environ.get('KAFKA_CLIENT')
-    )
-    await producer.start()
+    global producer
+    if not producer:
+        return {"error": "Kafka producer not initialized"}
 
     config_json = json.dumps(config.model_dump()).encode('utf-8')
     await producer.send_and_wait(
@@ -166,6 +184,4 @@ async def set_config(config: Config):
         value=config_json
     )
     logger.info(f"Configuration sent to topic {config_topic}: {config_json.decode()}")
-
-    await producer.stop()
     return {"message": "Configuration set successfully"}
