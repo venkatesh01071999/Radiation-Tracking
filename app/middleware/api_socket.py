@@ -1,16 +1,17 @@
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from aiokafka import AIOKafkaConsumer, TopicPartition
+from aiokafka import AIOKafkaConsumer, TopicPartition, AIOKafkaProducer
+from pydantic import BaseModel, Field
 import os
 from dotenv import load_dotenv
 import logging
 import json
 from murmurhash2 import murmurhash2
-import json
 
-
+# Loading  environment variables here
 load_dotenv()
 
+# Init FastAPI
 app = FastAPI()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,11 +19,25 @@ logger = logging.getLogger(__name__)
 
 processed_topic = os.environ.get('PROCESSED_TOPIC')
 aggregate_topic = os.environ.get('AGGREGATE_TOPIC')
+config_topic = os.environ.get('CONFIG_TOPIC')
 
 BASE_DELAY = 1  # second
 PING_INTERVAL = 10.0  # seconds
 MAX_MESSAGES_PER_BATCH = 20 # 20 Messages per batch
 
+
+
+# Pydantic models for our  config.json structure
+class Timeframe(BaseModel):
+    start: str = Field(..., description="Start time in 'YYYY-MM-DD HH:MM:SS' format")
+
+class Config(BaseModel):
+    user: str
+    boundingbox: list[float] = Field(..., min_items=4, max_items=4)
+    country: str
+    threshold: int
+    threshold_type: str  
+    timeframe: Timeframe
 
 def get_sleep_time(speed):
     actual_speed = max(1.0, min(10.0, speed))
@@ -48,7 +63,7 @@ async def create_consumer(topic: str, partition: int):
     consumer.assign([TopicPartition(topic, partition)]) # Assign the consumer to a specific partition
     return consumer
 
-
+#  WebSocket Routes 
 @app.websocket("/data-stream")
 async def ws_data_stream(websocket: WebSocket):
     await websocket.accept()
@@ -136,3 +151,21 @@ async def ws_aggregate_stream(websocket: WebSocket):
         logger.info(f"Client {username} disconnected")
     finally:
         await consumer.stop()
+
+# POST API to the configuration
+@app.post("/set-config")
+async def set_config(config: Config):
+    producer = AIOKafkaProducer(
+        bootstrap_servers=os.environ.get('KAFKA_CLIENT')
+    )
+    await producer.start()
+
+    config_json = json.dumps(config.model_dump()).encode('utf-8')
+    await producer.send_and_wait(
+        topic=config_topic,
+        value=config_json
+    )
+    logger.info(f"Configuration sent to topic {config_topic}: {config_json.decode()}")
+
+    await producer.stop()
+    return {"message": "Configuration set successfully"}
