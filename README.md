@@ -23,7 +23,6 @@
 3) Move to `app/flink` in the project directory.
 4) pip install -r requirements.txt
 5) Set the environment variables by creating a **.env** file. Especially JAR files path in the format `file:///`
-6) `python init_config.py` to set initial configuration.
-7) `python kafka_consumer.py` to start processing.
-8) Once Flink app is started, start the kafka provider by moving to `app/kafka` directory and run `python kafka_stream.py`
+6) `python kafka_consumer.py` to start processing.
+7) Once Flink app is started, start the kafka provider by moving to `app/kafka` directory and run `python kafka_stream.py`
 

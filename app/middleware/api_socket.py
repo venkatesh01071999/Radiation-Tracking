@@ -1,6 +1,8 @@
 import asyncio
+from typing import Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from aiokafka import AIOKafkaConsumer, TopicPartition, AIOKafkaProducer
+from fastapi.concurrency import asynccontextmanager
 from pydantic import BaseModel, Field
 import os
 from dotenv import load_dotenv
@@ -35,7 +37,7 @@ class Config(BaseModel):
     boundingbox: list[float] = Field(..., min_items=4, max_items=4)
     country: str
     threshold: int
-    threshold_type: str  
+    threshold_type: str = Field(alias='threshold-type')  
     timeframe: Timeframe
 
 def get_sleep_time(speed):
@@ -178,7 +180,7 @@ async def set_config(config: Config):
     if not producer:
         return {"error": "Kafka producer not initialized"}
 
-    config_json = json.dumps(config.model_dump()).encode('utf-8')
+    config_json = json.dumps(config.model_dump(by_alias=True)).encode('utf-8')
     await producer.send_and_wait(
         topic=config_topic,
         value=config_json
