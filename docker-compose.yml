@@ -90,8 +90,6 @@ services:
       bash -c "
         sleep 15
         flink run -d -py kafka_consumer.py --jobmanager jobmanager:8081
-        sleep 10
-        python init_config.py
       "
 
   producer:

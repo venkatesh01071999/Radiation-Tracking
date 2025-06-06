@@ -1,7 +1,10 @@
 import asyncio
+from datetime import datetime
+from typing import Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from aiokafka import AIOKafkaConsumer, TopicPartition, AIOKafkaProducer
-from pydantic import BaseModel, Field
+from fastapi.concurrency import asynccontextmanager
+from pydantic import BaseModel, Field, model_validator
 import os
 from dotenv import load_dotenv
 import logging
@@ -30,12 +33,18 @@ MAX_MESSAGES_PER_BATCH = 20 # 20 Messages per batch
 class Timeframe(BaseModel):
     start: str = Field(..., description="Start time in 'YYYY-MM-DD HH:MM:SS' format")
     end: Optional[str] = Field(None, description="Optional end time in 'YYYY-MM-DD HH:MM:SS' format")
+
+    @model_validator(mode='after')
+    def ensure_end_is_valid(self):
+        if self.end is None or self.end == 'null':
+            self.end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return self
 class Config(BaseModel):
     user: str
     boundingbox: list[float] = Field(..., min_items=4, max_items=4)
     country: str
     threshold: int
-    threshold_type: str  
+    threshold_type: str = Field(alias='threshold-type')  
     timeframe: Timeframe
 
 def get_sleep_time(speed):
@@ -178,7 +187,7 @@ async def set_config(config: Config):
     if not producer:
         return {"error": "Kafka producer not initialized"}
 
-    config_json = json.dumps(config.model_dump()).encode('utf-8')
+    config_json = json.dumps(config.model_dump(by_alias=True)).encode('utf-8')
     await producer.send_and_wait(
         topic=config_topic,
         value=config_json
