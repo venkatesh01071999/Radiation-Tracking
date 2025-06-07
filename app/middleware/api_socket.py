@@ -1,28 +1,51 @@
 import asyncio
+from datetime import datetime
+from typing import Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from aiokafka import AIOKafkaConsumer, TopicPartition
+from aiokafka import AIOKafkaConsumer, TopicPartition, AIOKafkaProducer
+from fastapi.concurrency import asynccontextmanager
+from pydantic import BaseModel, Field, model_validator
 import os
 from dotenv import load_dotenv
 import logging
 import json
 from murmurhash2 import murmurhash2
-import json
 
-
+# Loading  environment variables here
 load_dotenv()
 
-app = FastAPI()
+
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 processed_topic = os.environ.get('PROCESSED_TOPIC')
 aggregate_topic = os.environ.get('AGGREGATE_TOPIC')
+config_topic = os.environ.get('CONFIG_TOPIC')
 
 BASE_DELAY = 1  # second
 PING_INTERVAL = 10.0  # seconds
 MAX_MESSAGES_PER_BATCH = 20 # 20 Messages per batch
 
+
+
+# Pydantic models for our  config.json structure
+class Timeframe(BaseModel):
+    start: str = Field(..., description="Start time in 'YYYY-MM-DD HH:MM:SS' format")
+    end: Optional[str] = Field(None, description="Optional end time in 'YYYY-MM-DD HH:MM:SS' format")
+
+    @model_validator(mode='after')
+    def ensure_end_is_valid(self):
+        if self.end is None or self.end == 'null':
+            self.end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return self
+class Config(BaseModel):
+    user: str
+    boundingbox: list[float] = Field(..., min_items=4, max_items=4)
+    country: str
+    threshold: int
+    threshold_type: str = Field(alias='threshold-type')  
+    timeframe: Timeframe
 
 def get_sleep_time(speed):
     actual_speed = max(1.0, min(10.0, speed))
@@ -48,7 +71,27 @@ async def create_consumer(topic: str, partition: int):
     consumer.assign([TopicPartition(topic, partition)]) # Assign the consumer to a specific partition
     return consumer
 
+# Global Kafka producer variable
+producer: AIOKafkaProducer | None = None
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global producer
+    producer = AIOKafkaProducer(
+        bootstrap_servers=os.environ.get('KAFKA_CLIENT')
+    )
+    await producer.start()
+    logger.info("Kafka Producer started")
+    try:
+        yield
+    finally:
+        if producer:
+            await producer.stop()
+            logger.info("Kafka Producer stopped")
+
+app = FastAPI(lifespan=lifespan)
+
+#  WebSocket Routes 
 @app.websocket("/data-stream")
 async def ws_data_stream(websocket: WebSocket):
     await websocket.accept()
@@ -136,3 +179,18 @@ async def ws_aggregate_stream(websocket: WebSocket):
         logger.info(f"Client {username} disconnected")
     finally:
         await consumer.stop()
+
+# POST API to the configuration
+@app.post("/set-config")
+async def set_config(config: Config):
+    global producer
+    if not producer:
+        return {"error": "Kafka producer not initialized"}
+
+    config_json = json.dumps(config.model_dump(by_alias=True)).encode('utf-8')
+    await producer.send_and_wait(
+        topic=config_topic,
+        value=config_json
+    )
+    logger.info(f"Configuration sent to topic {config_topic}: {config_json.decode()}")
+    return {"message": "Configuration set successfully"}
