@@ -1,0 +1,18 @@
+{
+    "boundingbox": [
+        48.5518081,
+        51.0557008,
+        12.0905752,
+        18.8592531
+    ],
+    "country": "Czech Republic",
+    "threshold": 40,
+    "threshold-type":"both",
+    "timeframe": {
+        "start": "2024-07-01 00:00:00"
+    },
+    "centre": [
+        49.7439047,
+        15.3381061
+    ]
+}
