@@ -10,14 +10,28 @@ import {
   InputAdornment,
 } from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import configData from '../../config/config.json';
+
 
 const LandingPage = () => {
   const [userName, setUserName] = useState('');
+  const navigate = useNavigate();
 
-  
+
+  useEffect(()=>{
+    const user_config = localStorage.getItem('userConfig');
+    if(user_config){
+      navigate('/map-view');
+    }
+  },[]) ;
+
   const storUserName = () => {
-    localStorage.setItem('rad-username', userName);
+    const config = JSON.parse(JSON.stringify(configData)); // deepcopy
+    config['user'] = userName;
+    localStorage.setItem('userConfig', JSON.stringify(config));
+    navigate('/map-view');
   }
 
   return (
