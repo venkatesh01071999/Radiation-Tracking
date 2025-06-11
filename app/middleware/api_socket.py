@@ -132,8 +132,11 @@ async def ws_data_stream(websocket: WebSocket):
                 for message in messages:
                     if message.key.decode() == username:
                         value = json.loads(message.value.decode())
-                        value['radiation_data'] = json.loads(value['radiation_data'])
-                        await websocket.send_json(value)
+                        radiation_data = json.loads(value['radiation_data'])
+                        lat_lon = radiation_data['Latitude'] + '_' + radiation_data['Longitude']
+                        await websocket.send_json({
+                            str(lat_lon): radiation_data
+                        })
                         last_message = now
                         await asyncio.sleep(get_sleep_time(speed))
                 
