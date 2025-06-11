@@ -18,7 +18,7 @@ const RecenterMap = ({ centre }) => {
     return null;
 };
 
-const MapRight = ({centre, zoomLevel}) => {
+const MapRight = ({centre, zoomLevel, dataStream}) => {
     return(
         <Box sx={{width:'100%', height:'100%'}}>
             <MapContainer center={centre} zoom={zoomLevel} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>

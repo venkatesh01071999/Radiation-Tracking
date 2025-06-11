@@ -1,10 +1,12 @@
 import {
     Box
 } from '@mui/material';
+import { ToastContainer, toast } from 'react-toastify';
 import MapLeft from '../../components/MapLeft/MapLeft';
 import MapRight from '../../components/MapRight/MapRight';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { connectDataSocket, closeDataSocket } from '../services/socket';
 
 
 
@@ -12,6 +14,7 @@ const MapPage = () => {
     const navigate  =useNavigate();
     const [config, setConfig] = useState({});
     const [loading, setLoading] = useState(true);
+    const [socketDataMap, setSocketDataMap] = useState({});
     const zoom = 8;
     
     useEffect(()=>{
@@ -19,12 +22,54 @@ const MapPage = () => {
         if(!user_config){
             navigate('/');
         } else {
-            setConfig(JSON.parse(user_config));
+            const set_config = JSON.parse(user_config)
+            setConfig(set_config);
+            setLoading(false);
+            if('user' in set_config){
+                connectDataSocket(
+                    set_config['user'],
+                    1,
+                    (data) => {
+                        setSocketDataMap(prevMap => {
+                        const key = Object.keys(data)[0];
+                        const timestamp = data[key]['timestamp']; // adjust to your format
+                        const prev = prevMap[key];
+
+                        if (!prev || prev['timestamp'] < timestamp) {
+                            return {
+                                ...prevMap,
+                                [key]: data[key]
+                            };
+                        }
+                        return prevMap;
+                    });
+                    },
+                    () => {
+                        // opened
+                        toast('🙂Connected to server',{
+                            position: "top-center",
+                            autoClose: 2000
+                        })
+                    },
+                    (e) => {
+                        // closed
+                        if(e.code != 1006){
+                            toast('🥹Disconnected from server',{
+                                position: "top-center",
+                                autoClose: 2000
+                            })
+                        }
+                    }
+                );
+            }
+            return () => {
+                closeDataSocket(); // cleanup when component unmounts
+            };
         }
-        setLoading(false);
     },[]);
     return(
         <Box sx={{ height: '100vh', display: 'flex' }}>
+             <ToastContainer />
             <Box
                 sx={{
                 width: '350px',
@@ -49,7 +94,7 @@ const MapPage = () => {
                         alignItems: 'center' 
                     }}>Loading...</Box> :
                     <Box sx={{ height: '100%', width: '100%', backgroundColor: '#f7f7f7' }}>
-                        <MapRight centre={config['centre']} zoomLevel={zoom}/>
+                        <MapRight centre={config['centre']} zoomLevel={zoom} dataStream={socketDataMap}/>
                     </Box>
                 }
             </Box>
