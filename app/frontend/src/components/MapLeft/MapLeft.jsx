@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button} 
 from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -7,10 +7,45 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import './mapleft.css';
 
+const countries = [
+  "Germany", "USA", "India", "Togo", "Georgia", "Vanuatu", "Kyrgyzstan",
+  "Niger", "China", "Tuvalu", "Comoros", "Bosnia and Herzegovina", "Bahrain",
+  "Somalia", "Latvia", "Netherlands", "Lesotho", "Venezuela", "Kenya",
+  "Turkey", "Fiji", "Trinidad and Tobago", "Honduras", "Djibouti", "Eswatini",
+  "Tajikistan", "Saudi Arabia", "New Zealand", "Belarus", "Gambia", "DR Congo",
+  "Costa Rica", "Malawi", "Republic of the Congo", "Oman", "Iraq", "Senegal",
+  "Lebanon", "Angola", "Iran", "Ecuador", "Laos", "Sri Lanka", "São Tomé and Príncipe",
+  "Grenada", "Guinea", "Panama", "Yemen", "Estonia", "Guyana", "Luxembourg",
+  "Namibia", "Kosovo", "Libya", "Myanmar", "Israel", "Mali", "Argentina",
+  "Uganda", "Malaysia", "Zambia", "Micronesia", "Slovakia", "Burundi", "Serbia",
+  "Turkmenistan", "South Africa", "Kazakhstan", "Canada", "Poland", "San Marino",
+  "Qatar", "Croatia", "Mauritius", "Sierra Leone", "Saint Kitts and Nevis", "Iceland",
+  "Kuwait", "Cameroon", "El Salvador", "Cuba", "Brazil", "Solomon Islands",
+  "Greece", "Norway", "Jamaica", "Tanzania", "Bolivia", "Cyprus", "Mongolia",
+  "Monaco", "Tunisia", "Syria", "Chile", "Azerbaijan", "France", "South Korea",
+  "Ghana", "Denmark", "Andorra", "Switzerland", "North Macedonia", "South Sudan",
+  "Haiti", "Peru", "Guinea-Bissau", "Czechia", "Portugal", "Gabon", "Mexico",
+  "Italy", "Finland", "Zimbabwe", "Spain", "Japan", "Seychelles", "Albania",
+  "Moldova", "Guatemala", "Bulgaria", "Paraguay", "Eritrea", "Sudan",
+  "Equatorial Guinea", "Colombia", "Nigeria", "Montenegro", "Nepal", "Brunei",
+  "Austria", "Bahamas", "United Kingdom", "Liberia", "Central African Republic",
+  "Algeria", "Saint Lucia", "Romania", "United Arab Emirates", "Morocco",
+  "Botswana", "Lithuania", "Cape Verde", "United States", "Australia", "Tonga",
+  "Afghanistan", "Nauru", "Hungary", "Mauritania", "Slovenia", "Chad",
+  "Vatican City", "Benin", "Singapore", "Malta", "Saint Vincent and the Grenadines",
+  "Marshall Islands", "Thailand", "Liechtenstein", "Ireland", "Maldives", "Vietnam",
+  "Armenia", "Pakistan", "Ivory Coast", "Russia", "Timor-Leste", "Nicaragua",
+  "Papua New Guinea", "Egypt", "Jordan", "Uruguay", "Burkina Faso", "Cambodia",
+  "Ethiopia", "Kiribati", "Bhutan", "Dominican Republic", "Suriname", "Bangladesh",
+  "Barbados", "North Korea", "Belgium", "Palau", "Philippines", "Indonesia",
+  "Dominica", "Rwanda", "Madagascar", "Samoa", "Antigua and Barbuda", "Sweden",
+  "Mozambique", "Uzbekistan", "Ukraine", "Belize"
+];
+
 const MapLeft = () => {
   const [country, setCountry] = useState('Germany');
   const [threshold, setThreshold] = useState(32);
-  const [speed, setSpeed] = useState(5);
+  const [speed, setSpeed] = useState(1);
   const [from, setFrom] = useState(dayjs());
   const [to, setTo] = useState(dayjs());
 
@@ -57,9 +92,9 @@ const MapLeft = () => {
           <Typography className="field-label">Country</Typography>
           <FormControl fullWidth>
             <Select value={country} onChange={e => setCountry(e.target.value)}>
-              <MenuItem value="Germany">Germany</MenuItem>
-              <MenuItem value="USA">USA</MenuItem>
-              <MenuItem value="India">India</MenuItem>
+              {countries.map(c => (
+                <MenuItem key={c} value={c}>{c}</MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Box>
