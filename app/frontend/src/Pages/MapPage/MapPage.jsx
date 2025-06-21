@@ -6,7 +6,7 @@ import MapLeft from '../../components/MapLeft/MapLeft';
 import MapRight from '../../components/MapRight/MapRight';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { connectDataSocket, closeDataSocket } from '../services/socket';
+import { connectDataSocket, closeDataSocket } from '../../services/socket';
 
 
 
