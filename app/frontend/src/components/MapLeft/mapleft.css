@@ -1,0 +1,74 @@
+.map-left-container {
+  width: 360px;
+  height: 60000000vh;
+  padding-left: 10px;
+  padding-right: 30px;
+  background: linear-gradient(to bottom, #fafafa, #a8bed5);
+  overflow: auto;
+  font-family: 'Roboto', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 50px;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.form-control {
+  background-color: #fcf7f7;
+  border-radius: 16px;
+  padding: 24px; 
+  margin: 20px 0;
+  transition: box-shadow 0.4s ease;
+}
+
+.form-control:hover {
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+}
+
+.field-label {
+  font-size: 1.25rem;
+  color: #d8750b;
+  margin-bottom: 16px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1px;
+}
+
+.stat-row:last-child {
+  margin-bottom: 0;
+}
+
+.stat-row .MuiTypography-root {
+  color: #0c0c0c;
+  font-weight: 500;
+  background-color: #dde5ee;
+  padding: 10px 2px;
+  border-radius: 90px;
+  min-width: 100px;
+  text-align: center;
+}
+
+.form-control {
+  margin-top: 20px;
+}
+
+.field-label {
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #121111;
+}
