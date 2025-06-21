@@ -81,7 +81,7 @@ const MapPage = () => {
                 borderRight: '1px solid #ddd',
                 }}
             >
-                <MapLeft/>
+                <MapLeft user_config={config}/>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 {
