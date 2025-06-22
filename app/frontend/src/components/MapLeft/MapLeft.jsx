@@ -11,7 +11,7 @@ import { getBoundingBox } from '../../services/api';
 import { ToastContainer, toast } from 'react-toastify';
 
 
-const MapLeft = ({ user_config, submitConfig }) => {
+const MapLeft = ({ user_config, submitConfig, aggregateData }) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
   const [boundingBox, setBoundingBox] = useState(null);
@@ -208,6 +208,22 @@ const MapLeft = ({ user_config, submitConfig }) => {
             <Typography variant="body2">Std Dev: {stats.stdDev} CPM</Typography>
           </Box>
         </Box>
+          {
+          aggregateData ? (
+            <Box sx={{ mt: 2, p: 2, border: '1px solid #ccc', borderRadius: 2, bgcolor: '#fafafa' }}>
+              <Typography variant="subtitle1" fontWeight="bold">📊 Aggregate Data</Typography>
+              <Typography variant="body2">Count: {aggregateData.agg_data?.Count ?? 'N/A'}</Typography>
+              <Typography variant="body2">Mean: {aggregateData.agg_data?.Mean ?? 'N/A'}</Typography>
+              <Typography variant="body2">Min: {aggregateData.agg_data?.Min ?? 'N/A'}</Typography>
+              <Typography variant="body2">Max: {aggregateData.agg_data?.Max ?? 'N/A'}</Typography>
+              <Typography variant="body2">Time: {aggregateData.timestamp ?? 'N/A'}</Typography>
+            </Box>
+             ) : (
+            <Box sx={{ mt: 2, color: '#666' }}>
+              <Typography variant="body2">Waiting for aggregate data...</Typography>
+            </Box>
+          )
+        }
       </Box>
     </LocalizationProvider>
   );
