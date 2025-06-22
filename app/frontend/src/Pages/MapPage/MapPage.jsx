@@ -7,7 +7,7 @@ import MapRight from '../../components/MapRight/MapRight';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { connectDataSocket, closeDataSocket } from '../../services/socket';
-
+import { setConfiguration } from '../../services/api';
 
 
 const MapPage = () => {
@@ -67,13 +67,28 @@ const MapPage = () => {
             };
         }
     },[]);
-    const handleConfigSetting = (data) => {
-        console.log(data)
+
+    const handleConfigSetting = async (data) => {
+        try{
+            console.log(data)
+            const config = await setConfiguration(data);
+            toast.success(config.message,{
+                position: "top-center",
+                autoClose: 2000
+            });
+            localStorage.setItem('userConfig', JSON.stringify(data));
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message,{
+                position: "top-center",
+                autoClose: 2000
+            });
+        }
     }
 
     return(
         <Box sx={{ height: '100vh', display: 'flex' }}>
-             <ToastContainer />
+            <ToastContainer />
             <Box
                 sx={{
                 width: '350px',

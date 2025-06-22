@@ -44,11 +44,15 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
 
         # OPERATOR 2 - Time Based Filtering
         if "timeframe" in config:
-            start_time, end_time = datetime.strptime(config["timeframe"].get("start"), TIME_FORMAT), \
-                    datetime.strptime(config["timeframe"].get("end", datetime.now().strftime("%Y-%m-%d %H:%M:%S")), TIME_FORMAT)
-
-            if captured_time < start_time or captured_time > end_time:
-                default_return = False
+            timeframe = config["timeframe"]
+            if "start" in timeframe:
+                start_time = datetime.strptime(timeframe.get("start"), TIME_FORMAT)      
+                if captured_time < start_time:
+                    default_return = False
+            if "end" in timeframe:
+                end_time = datetime.strptime(timeframe.get("end"), TIME_FORMAT)
+                if captured_time > end_time:
+                    default_return = False
         
         #OPERATOR 3 - Location Based Filtering
         # This is a bounding box filter
