@@ -9,7 +9,7 @@ import './mapleft.css';
 import { countries } from '../../config/countries';
 
 
-const MapLeft = ({ user_config }) => {
+const MapLeft = ({ user_config, submitConfig }) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
   const [thresholdType, setThresholdType] = useState('');
@@ -23,7 +23,7 @@ const MapLeft = ({ user_config }) => {
     stdDev: ''
   });
 
-    useEffect(() => {
+  useEffect(() => {
       if (user_config) {
         setCountry(user_config.country);
         setThreshold(user_config.threshold);
@@ -33,30 +33,23 @@ const MapLeft = ({ user_config }) => {
     }, [user_config]);
 
   const handleSubmit = async () => {
-    const config = {
-      user: "john_doe",
-      boundingbox: [5.0, 50.0, 15.0, 55.0],
+    submitConfig({
       country,
       threshold,
+      'threshold-type': thresholdType,
       timeframe: {
-        start: from.format("YYYY-MM-DD HH:mm:ss"),
-        end: to.format("YYYY-MM-DD HH:mm:ss")
-      }
-    };
-
-    try {
-      const res = await fetch("http://localhost:8000/set-config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config)
-      });
-
-      const data = await res.json();
-      console.log("Config sent:", data);
-    } catch (err) {
-      console.error("Error sending config:", err);
-    }
+        start: from ? from.format('YYYY-MM-DD HH:mm:ss') : null,
+        end: to ? to.format('YYYY-MM-DD HH:mm:ss') : null
+      },
+      'user': user_config.user
+    });
   };
+
+  const handleCountryChange = (event) => {
+    const selectedCountry = event.target.value;
+    setCountry(selectedCountry);
+    
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -66,7 +59,7 @@ const MapLeft = ({ user_config }) => {
         <Box className="form-control">
           <Typography className="field-label">Country</Typography>
           <FormControl fullWidth size='small'>
-            <Select  value={country || ''} onChange={e => setCountry(e.target.value)}>
+            <Select  value={country || ''} onChange={handleCountryChange}>
               {countries.map(c => (
                 <MenuItem key={c} value={c}>{c}</MenuItem>
               ))}
@@ -81,7 +74,7 @@ const MapLeft = ({ user_config }) => {
                 <RadioGroup
                   row
                   name="threshold-type"
-                  value={thresholdType}
+                  value={thresholdType || ''}
                   onChange={(e) => setThresholdType(e.target.value)}
                 >
                   <FormControlLabel
@@ -133,6 +126,16 @@ const MapLeft = ({ user_config }) => {
           />
         </Box>
 
+        <Box mt={3} className="submit-container">
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+          >
+            Retrieve Data
+          </Button>
+        </Box>
+
         <Box className="form-control">
           <Typography className="field-label">Speed: {speed}</Typography>
           <Slider
@@ -156,17 +159,6 @@ const MapLeft = ({ user_config }) => {
             <Typography variant="body2">Average: {stats.average} CPM</Typography>
             <Typography variant="body2">Std Dev: {stats.stdDev} CPM</Typography>
           </Box>
-        </Box>
-
-
-        <Box mt={3} className="submit-container">
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSubmit}
-          >
-            Retrieve Data
-          </Button>
         </Box>
       </Box>
     </LocalizationProvider>
