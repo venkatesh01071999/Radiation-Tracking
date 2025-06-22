@@ -1,6 +1,5 @@
 .map-left-container {
   width: 360px;
-  height: 60000000vh;
   padding-left: 10px;
   padding-right: 30px;
   background: linear-gradient(to bottom, #fafafa, #a8bed5);
@@ -12,20 +11,11 @@
   box-sizing: border-box;
 }
 
-
-.title {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 50px;
-  color: #2c3e50;
-  text-align: center;
-}
-
 .form-control {
   background-color: #fcf7f7;
   border-radius: 16px;
-  padding: 24px; 
-  margin: 20px 0;
+  padding: 12px; 
+  margin: 12px 0;
   transition: box-shadow 0.4s ease;
 }
 
@@ -34,18 +24,15 @@
 }
 
 .field-label {
-  font-size: 1.25rem;
-  color: #d8750b;
-  margin-bottom: 16px;
+  font-size: 0.5rem;
   display: block;
-  text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .stat-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1px;
+  margin-bottom: 5px;
 }
 
 .stat-row:last-child {
@@ -62,13 +49,17 @@
   text-align: center;
 }
 
-.form-control {
-  margin-top: 20px;
+.submit-container{
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  margin-bottom: 10px;
 }
 
-.field-label {
-  margin-bottom: 6px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #121111;
+.MuiFormControlLabel-root{
+  margin-right: 9px !important;
+}
+
+.MuiFormControlLabel-label {
+  font-size: small !important;
 }

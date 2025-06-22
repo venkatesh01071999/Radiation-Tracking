@@ -67,6 +67,10 @@ const MapPage = () => {
             };
         }
     },[]);
+    const handleConfigSetting = (data) => {
+        console.log(data)
+    }
+
     return(
         <Box sx={{ height: '100vh', display: 'flex' }}>
              <ToastContainer />
@@ -81,7 +85,7 @@ const MapPage = () => {
                 borderRight: '1px solid #ddd',
                 }}
             >
-                <MapLeft/>
+                <MapLeft user_config={config} submitConfig={handleConfigSetting}/>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 {
