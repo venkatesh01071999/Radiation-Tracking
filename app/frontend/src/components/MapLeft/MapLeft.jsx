@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button,Radio,RadioGroup, FormControlLabel} 
 from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -7,15 +7,20 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import './mapleft.css';
 import { countries } from '../../config/countries';
+import { getBoundingBox } from '../../services/api';
+import { ToastContainer, toast } from 'react-toastify';
 
 
 const MapLeft = ({ user_config, submitConfig }) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
+  const [boundingBox, setBoundingBox] = useState(null);
+  const [centre, setCentre] = useState(null);
   const [thresholdType, setThresholdType] = useState('');
   const [speed, setSpeed] = useState(1);
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
+  const initialized = useRef(false);
   const [stats, setStats] = useState({
     highest: '',
     lowest: '',
@@ -24,35 +29,78 @@ const MapLeft = ({ user_config, submitConfig }) => {
   });
 
   useEffect(() => {
-      if (user_config) {
+      if (Object.keys(user_config).length > 0 && !initialized.current) {
         setCountry(user_config.country);
         setThreshold(user_config.threshold);
         setThresholdType(user_config['threshold-type']);
-        setFrom(user_config.timeframe?.start ? dayjs(user_config.timeframe.start) : dayjs())
+        setBoundingBox(user_config.boundingbox);
+        setFrom(user_config.timeframe?.start ? dayjs(user_config.timeframe.start) : null);
+        setTo(user_config.timeframe?.end ? dayjs(user_config.timeframe.end) : null);
+        setCentre(user_config.centre);
+        initialized.current = true;
       }
     }, [user_config]);
 
   const handleSubmit = async () => {
-    submitConfig({
+    const config = {
       country,
       threshold,
       'threshold-type': thresholdType,
-      timeframe: {
-        start: from ? from.format('YYYY-MM-DD HH:mm:ss') : null,
-        end: to ? to.format('YYYY-MM-DD HH:mm:ss') : null
-      },
+      'boundingbox': boundingBox,
+      centre,
       'user': user_config.user
-    });
+    };
+    if (from) {
+      config.timeframe = { start: from.format('YYYY-MM-DD HH:mm:ss') };
+    }
+    if (to) {
+      config.timeframe = { ...config.timeframe, end: to.format('YYYY-MM-DD HH:mm:ss') };
+    }
+    submitConfig(config);
   };
 
-  const handleCountryChange = (event) => {
+  const handleCountryChange = async (event) => {
     const selectedCountry = event.target.value;
+    try {
+      const boundingBox = await getBoundingBox(selectedCountry);
+      setBoundingBox(boundingBox[0].boundingbox);
+      setCentre([boundingBox[0].lat, boundingBox[0].lon]);
+    } catch (error) {
+      toast.error(error.message,{
+          position: "top-center",
+          autoClose: 2000
+      })
+    }
     setCountry(selectedCountry);
-    
+  }
+
+  const setFromTimeframe = (value) => {
+    if(to && value && value.isAfter(to)) {
+      toast.error('Start time cannot be after end time',{
+          position: "top-center",
+          autoClose: 2000
+      });
+      setFrom(null);
+    } else {
+      setFrom(value);
+    }
+  }
+
+  const setToTimeframe = (value) => {
+   if(from && value && value.isBefore(from)) {
+      toast.error('End time cannot be before start time',{
+          position: "top-center",
+          autoClose: 2000
+      });
+      setTo(null);
+   } else {
+      setTo(value);
+    }
   }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <ToastContainer />
       <Box className="map-left-container">
         <Typography variant="h6" className="section-title">Configuration Settings</Typography>
 
@@ -108,7 +156,7 @@ const MapLeft = ({ user_config, submitConfig }) => {
           <Typography className="field-label">Timeframe (From)</Typography>
           <DateTimePicker
             value={from || null}
-            onChange={setFrom}
+            onChange={setFromTimeframe}
             format="YYYY-MM-DD HH:mm:ss"
             ampm={false}
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
@@ -119,7 +167,7 @@ const MapLeft = ({ user_config, submitConfig }) => {
           <Typography className="field-label">Timeframe (To)</Typography>
           <DateTimePicker
             value={to || null}
-            onChange={setTo}
+            onChange={setToTimeframe}
             format="YYYY-MM-DD HH:mm:ss"
             ampm={false}
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
