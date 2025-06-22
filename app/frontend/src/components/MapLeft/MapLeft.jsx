@@ -74,6 +74,30 @@ const MapLeft = ({ user_config, submitConfig }) => {
     setCountry(selectedCountry);
   }
 
+  const setFromTimeframe = (value) => {
+    if(to && value && value.isAfter(to)) {
+      toast.error('Start time cannot be after end time',{
+          position: "top-center",
+          autoClose: 2000
+      });
+      setFrom(null);
+    } else {
+      setFrom(value);
+    }
+  }
+
+  const setToTimeframe = (value) => {
+   if(from && value && value.isBefore(from)) {
+      toast.error('End time cannot be before start time',{
+          position: "top-center",
+          autoClose: 2000
+      });
+      setTo(null);
+   } else {
+      setTo(value);
+    }
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ToastContainer />
@@ -132,7 +156,7 @@ const MapLeft = ({ user_config, submitConfig }) => {
           <Typography className="field-label">Timeframe (From)</Typography>
           <DateTimePicker
             value={from || null}
-            onChange={setFrom}
+            onChange={setFromTimeframe}
             format="YYYY-MM-DD HH:mm:ss"
             ampm={false}
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
@@ -143,7 +167,7 @@ const MapLeft = ({ user_config, submitConfig }) => {
           <Typography className="field-label">Timeframe (To)</Typography>
           <DateTimePicker
             value={to || null}
-            onChange={setTo}
+            onChange={setToTimeframe}
             format="YYYY-MM-DD HH:mm:ss"
             ampm={false}
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
