@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
-from typing import Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from typing import List, Optional, Literal, Union
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from aiokafka import AIOKafkaConsumer, TopicPartition, AIOKafkaProducer
 from fastapi.concurrency import asynccontextmanager
 from pydantic import BaseModel, Field, model_validator
@@ -11,6 +11,7 @@ import logging
 import json
 from murmurhash2 import murmurhash2
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Loading  environment variables here
 load_dotenv()
@@ -40,6 +41,15 @@ class Timeframe(BaseModel):
         if self.end is None or self.end == 'null':
             self.end = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return self
+
+class PolygonGeometry(BaseModel):
+    type: Literal["Polygon"]
+    coordinates: List[List[List[float]]]  # List of linear rings
+
+class MultiPolygonGeometry(BaseModel):
+    type: Literal["MultiPolygon"]
+    coordinates: List[List[List[List[float]]]]  # List of polygons, each with linear rings
+
 class Config(BaseModel):
     user: str
     boundingbox: list[float] = Field(..., min_items=4, max_items=4)
@@ -47,6 +57,13 @@ class Config(BaseModel):
     threshold: int
     threshold_type: str = Field(alias='threshold-type')  
     timeframe: Timeframe
+    geojson: Union[PolygonGeometry, MultiPolygonGeometry]
+
+class UnlimitedSizeMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Disable body size check by consuming the body early
+        body = await request.body()
+        return await call_next(request)
 
 def get_sleep_time(speed):
     actual_speed = max(1.0, min(10.0, speed))
@@ -66,7 +83,8 @@ async def create_consumer(topic: str, partition: int):
         group_id =  "middleware-group",
         auto_offset_reset = 'latest',
         enable_auto_commit=False,
-        max_poll_records=MAX_MESSAGES_PER_BATCH
+        max_poll_records=MAX_MESSAGES_PER_BATCH,
+        max_partition_fetch_bytes=10485760,  # 10 MB
     )
     await consumer.start()
     consumer.assign([TopicPartition(topic, partition)]) # Assign the consumer to a specific partition
@@ -79,7 +97,8 @@ producer: AIOKafkaProducer | None = None
 async def lifespan(app: FastAPI):
     global producer
     producer = AIOKafkaProducer(
-        bootstrap_servers=os.environ.get('KAFKA_CLIENT')
+        bootstrap_servers=os.environ.get('KAFKA_CLIENT'),
+        max_request_size=10485880,  # 10 MB
     )
     await producer.start()
     logger.info("Kafka Producer started")
@@ -101,6 +120,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(UnlimitedSizeMiddleware)
 
 #  WebSocket Routes 
 @app.websocket("/data-stream")

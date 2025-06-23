@@ -13,6 +13,7 @@ import json
 import os
 from datetime import datetime
 import logging
+from shapely.geometry import Point, shape
 
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
@@ -59,12 +60,13 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         #OPERATOR 3 - Location Based Filtering
         # This is a bounding box filter
         # bounds[0] = lat_min, bounds[1] = lat_max, bounds[2] = lon_min, bounds[3] = lon_max
-        if "boundingbox" in config:
-            bounds = config["boundingbox"]
-            lat, lon = float(event['Latitude']), float(event['Longitude'])
-            if not ((bounds[0] <= lat <= bounds[1]) and
-                    (bounds[2] <= lon <= bounds[3])):
+        if "geojson" in config:
+            bounds = shape(config['geojson'])
+            point = Point(float(event['Longitude']), float(event['Latitude']))
+            print(f"{bounds.contains(point)}")
+            if not bounds.contains(point):
                 return False
+            
                 
         #OPERATOR 4 - THRESHOLDTYPE-BASED COLOR TAGGING AND FILTERING
         threshold = config.get("threshold")

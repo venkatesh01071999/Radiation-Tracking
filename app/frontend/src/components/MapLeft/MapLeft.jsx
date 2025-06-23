@@ -14,8 +14,9 @@ import { ToastContainer, toast } from 'react-toastify';
 const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
-  const [boundingBox, setBoundingBox] = useState(null);
-  const [centre, setCentre] = useState(null);
+  const boundingBox = useRef(null);
+  const centre = useRef(null);
+  const geojson = useRef(null);
   const [thresholdType, setThresholdType] = useState('');
   const [speed, setSpeed] = useState(1);
   const [from, setFrom] = useState(null);
@@ -33,10 +34,11 @@ const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
         setCountry(user_config.country);
         setThreshold(user_config.threshold);
         setThresholdType(user_config['threshold-type']);
-        setBoundingBox(user_config.boundingbox);
+        boundingBox.current = user_config.boundingbox;
+        geojson.current = user_config.geojson;
         setFrom(user_config.timeframe?.start ? dayjs(user_config.timeframe.start) : null);
         setTo(user_config.timeframe?.end ? dayjs(user_config.timeframe.end) : null);
-        setCentre(user_config.centre);
+        centre.current = user_config.centre;
         initialized.current = true;
       }
     }, [user_config]);
@@ -46,9 +48,10 @@ const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
       country,
       threshold,
       'threshold-type': thresholdType,
-      'boundingbox': boundingBox,
-      centre,
-      'user': user_config.user
+      'boundingbox': boundingBox.current,
+      'centre': centre.current,
+      'user': user_config.user,
+      'geojson': geojson.current,
     };
     if (from) {
       config.timeframe = { start: from.format('YYYY-MM-DD HH:mm:ss') };
@@ -62,10 +65,11 @@ const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
   const handleCountryChange = async (event) => {
     const selectedCountry = event.target.value;
     try {
-      const boundingBox = await getBoundingBox(selectedCountry);
-      const mappedbb = boundingBox[0].boundingbox.map(Number);
-      setBoundingBox(mappedbb);
-      setCentre([Number(boundingBox[0].lat), Number(boundingBox[0].lon)]);
+      const boundingbox = await getBoundingBox(selectedCountry);
+      const mappedbb = boundingbox[0].boundingbox.map(Number);
+      boundingBox.current = mappedbb;
+      centre.current = [Number(boundingbox[0].lat), Number(boundingbox[0].lon)];
+      geojson.current = boundingbox[0].geojson;
     } catch (error) {
       toast.error(error.message,{
           position: "top-center",
