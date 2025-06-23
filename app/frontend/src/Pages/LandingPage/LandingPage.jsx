@@ -13,6 +13,8 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import configData from '../../config/config.json';
+import { setConfiguration } from '../../services/api';
+import { toast, ToastContainer } from 'react-toastify';
 
 
 const LandingPage = () => {
@@ -27,11 +29,19 @@ const LandingPage = () => {
     }
   },[]) ;
 
-  const storUserName = () => {
-    const config = JSON.parse(JSON.stringify(configData)); // deepcopy
-    config['user'] = userName;
-    localStorage.setItem('userConfig', JSON.stringify(config));
-    navigate('/map-view');
+  const storUserName = async() => {
+    try{
+        const config = JSON.parse(JSON.stringify(configData)); // deepcopy
+        config['user'] = userName;
+        const _ = await setConfiguration(config);
+        localStorage.setItem('userConfig', JSON.stringify(config));
+        navigate('/map-view');
+    } catch (error) {
+        toast.error('Failed to set user configuration', {
+          position: "top-center",
+          autoClose: 2000,
+        });
+    }
   }
 
   return (
@@ -44,6 +54,7 @@ const LandingPage = () => {
         backgroundColor: '#f5f9ff', // white
       }}
     >
+      <ToastContainer />
       <Container maxWidth="sm">
         <Card elevation={3} sx={{ borderRadius: 3 }}>
           <CardContent>

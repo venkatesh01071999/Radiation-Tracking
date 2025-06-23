@@ -11,7 +11,7 @@ import { getBoundingBox } from '../../services/api';
 import { ToastContainer, toast } from 'react-toastify';
 
 
-const MapLeft = ({ user_config, submitConfig }) => {
+const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
   const [boundingBox, setBoundingBox] = useState(null);
@@ -63,8 +63,9 @@ const MapLeft = ({ user_config, submitConfig }) => {
     const selectedCountry = event.target.value;
     try {
       const boundingBox = await getBoundingBox(selectedCountry);
-      setBoundingBox(boundingBox[0].boundingbox);
-      setCentre([boundingBox[0].lat, boundingBox[0].lon]);
+      const mappedbb = boundingBox[0].boundingbox.map(Number);
+      setBoundingBox(mappedbb);
+      setCentre([Number(boundingBox[0].lat), Number(boundingBox[0].lon)]);
     } catch (error) {
       toast.error(error.message,{
           position: "top-center",
@@ -97,6 +98,11 @@ const MapLeft = ({ user_config, submitConfig }) => {
       setTo(value);
     }
   }
+
+  const speedChange = (value) => {
+    setSpeed(value);
+    speedConfig(value);
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -188,7 +194,7 @@ const MapLeft = ({ user_config, submitConfig }) => {
           <Typography className="field-label">Speed: {speed}</Typography>
           <Slider
             value={speed}
-            onChange={(e, val) => setSpeed(val)}
+            onChange={(e, val) => speedChange(val)}
             min={1}
             max={10}
             step={1}
