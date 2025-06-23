@@ -6,7 +6,7 @@ import MapLeft from '../../components/MapLeft/MapLeft';
 import MapRight from '../../components/MapRight/MapRight';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { connectDataSocket, closeDataSocket, connectAggregateSocket, closeAggregateSocket} from '../../services/socket';
+import { connectDataSocket, closeDataSocket, sendData, connectAggregateSocket, closeAggregateSocket } from '../../services/socket';
 import { setConfiguration } from '../../services/api';
 
 
@@ -92,15 +92,27 @@ const MapPage = () => {
 
     const handleConfigSetting = async (data) => {
         try{
-            console.log(data)
             const config = await setConfiguration(data);
             toast.success(config.message,{
                 position: "top-center",
                 autoClose: 2000
             });
             localStorage.setItem('userConfig', JSON.stringify(data));
+            setConfig(data);     
         } catch (error) {
-            console.log(error)
+            toast.error(error.message,{
+                position: "top-center",
+                autoClose: 2000
+            });
+        }
+    }
+
+    const handleSpeedSetting = (speed) => {
+        try{
+            sendData({ 
+                'speed': speed
+             });
+        } catch (error) {
             toast.error(error.message,{
                 position: "top-center",
                 autoClose: 2000
@@ -122,7 +134,7 @@ const MapPage = () => {
                 borderRight: '1px solid #ddd',
                 }}
             >
-                <MapLeft user_config={config} submitConfig={handleConfigSetting} aggregateData={aggregateData} />
+                <MapLeft user_config={config} submitConfig={handleConfigSetting} speedConfig={handleSpeedSetting} aggregateData={aggregateData}/>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 {

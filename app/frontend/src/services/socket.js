@@ -23,7 +23,15 @@ export const connectDataSocket = (username, speed, onData, onOpen, onClose) => {
         onClose(e);
     }
 };
-// Closes the data stream WebSocket
+
+export const sendData = (data) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(data));
+    } else {
+        throw new Error('Socket is not open');
+    }
+};
+
 export const closeDataSocket = () => {
     if (socket) {
         socket.close();
