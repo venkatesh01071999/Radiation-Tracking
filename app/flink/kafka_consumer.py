@@ -64,7 +64,6 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
             lat, lon = float(event['Latitude']), float(event['Longitude'])
             if not ((bounds[0] <= lat <= bounds[1]) and
                     (bounds[2] <= lon <= bounds[3])):
-                print(f"Location {lat}, {lon} is outside the bounding box {bounds}")
                 return False
                 
         #OPERATOR 4 - THRESHOLDTYPE-BASED COLOR TAGGING AND FILTERING
