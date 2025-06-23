@@ -15,7 +15,7 @@ const MapPage = () => {
     const [config, setConfig] = useState({});
     const [loading, setLoading] = useState(true);
     const [socketDataMap, setSocketDataMap] = useState({});
-    const [aggregateData, setAggregateData] = useState(null);
+    const [aggregateData, setAggregateData] = useState({});
     const zoom = 8;
     
     useEffect(()=>{

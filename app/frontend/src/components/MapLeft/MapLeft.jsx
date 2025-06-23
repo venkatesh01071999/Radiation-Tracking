@@ -41,6 +41,18 @@ const MapLeft = ({ user_config, submitConfig, aggregateData }) => {
       }
     }, [user_config]);
 
+  // Updating  stats when aggregateData changes
+  useEffect(() => {
+    if (aggregateData) {
+      setStats({
+        highest: aggregateData.max_radiation ?? 'N/A',
+        lowest: aggregateData.min_radiation ?? 'N/A',
+        average: aggregateData.Average?.value ?? 'N/A',
+        stdDev: aggregateData.stddev ?? 'N/A'
+      });
+    }
+  }, [aggregateData]);
+
   const handleSubmit = async () => {
     const config = {
       country,
@@ -196,7 +208,6 @@ const MapLeft = ({ user_config, submitConfig, aggregateData }) => {
             size='small'
           />
         </Box>
-
         <Box className="form-control">
           <Typography className="field-label" fontWeight="bold">Statistics</Typography>
           <Box className="stat-row">
@@ -206,24 +217,8 @@ const MapLeft = ({ user_config, submitConfig, aggregateData }) => {
           <Box className="stat-row">
             <Typography variant="body2">Average: {stats.average} CPM</Typography>
             <Typography variant="body2">Std Dev: {stats.stdDev} CPM</Typography>
-          </Box>
+          </Box>    
         </Box>
-          {
-          aggregateData ? (
-            <Box sx={{ mt: 2, p: 2, border: '1px solid #ccc', borderRadius: 2, bgcolor: '#fafafa' }}>
-              <Typography variant="subtitle1" fontWeight="bold">📊 Aggregate Data</Typography>
-              <Typography variant="body2">Count: {aggregateData.agg_data?.Count ?? 'N/A'}</Typography>
-              <Typography variant="body2">Mean: {aggregateData.agg_data?.Mean ?? 'N/A'}</Typography>
-              <Typography variant="body2">Min: {aggregateData.agg_data?.Min ?? 'N/A'}</Typography>
-              <Typography variant="body2">Max: {aggregateData.agg_data?.Max ?? 'N/A'}</Typography>
-              <Typography variant="body2">Time: {aggregateData.timestamp ?? 'N/A'}</Typography>
-            </Box>
-             ) : (
-            <Box sx={{ mt: 2, color: '#666' }}>
-              <Typography variant="body2">Waiting for aggregate data...</Typography>
-            </Box>
-          )
-        }
       </Box>
     </LocalizationProvider>
   );

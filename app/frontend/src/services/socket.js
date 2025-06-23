@@ -34,14 +34,14 @@ export const closeDataSocket = () => {
 // Connects to the aggregate stream WebSocket
 
 export const connectAggregateSocket = (user, onMessage, onOpen, onClose) => {
-    const url = `ws://localhost:8000/aggregate-stream?user=${user}`;
+    const url = `${SOCKET_URL}/aggregate-stream?user=${user}`;
     aggregateSocket = new WebSocket(url);
 
     aggregateSocket.onopen = onOpen;
     aggregateSocket.onclose = onClose;
     aggregateSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.type !== "ping") {
+        if (!('type' in data)) {
             onMessage(data);
         }
     };
