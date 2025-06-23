@@ -6,7 +6,7 @@ import MapLeft from '../../components/MapLeft/MapLeft';
 import MapRight from '../../components/MapRight/MapRight';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { connectDataSocket, closeDataSocket, sendData } from '../../services/socket';
+import { connectDataSocket, closeDataSocket, sendData, connectAggregateSocket, closeAggregateSocket } from '../../services/socket';
 import { setConfiguration } from '../../services/api';
 
 
@@ -15,6 +15,7 @@ const MapPage = () => {
     const [config, setConfig] = useState({});
     const [loading, setLoading] = useState(true);
     const [socketDataMap, setSocketDataMap] = useState({});
+    const [aggregateData, setAggregateData] = useState({});
     const zoom = 8;
     
     useEffect(()=>{
@@ -61,9 +62,30 @@ const MapPage = () => {
                         }
                     }
                 );
+
+                // ➕ Connect aggregate socket
+                connectAggregateSocket(
+                    set_config['user'],
+                    (data) => {
+                        setAggregateData(data);
+                    },
+                    () => {
+                        toast('📊 Aggregate stream connected', {
+                            position: "top-center",
+                            autoClose: 2000
+                        });
+                    },
+                    () => {
+                        toast('⚠️ Aggregate stream disconnected', {
+                            position: "top-center",
+                            autoClose: 2000
+                        });
+                    }
+                );
             }
             return () => {
                 closeDataSocket(); // cleanup when component unmounts
+                 closeAggregateSocket(); // cleanup
             };
         }
     },[]);
@@ -96,7 +118,7 @@ const MapPage = () => {
                 autoClose: 2000
             });
         }
-    }
+    };
 
     return(
         <Box sx={{ height: '100vh', display: 'flex' }}>
@@ -112,7 +134,7 @@ const MapPage = () => {
                 borderRight: '1px solid #ddd',
                 }}
             >
-                <MapLeft user_config={config} submitConfig={handleConfigSetting} speedConfig={handleSpeedSetting}/>
+                <MapLeft user_config={config} submitConfig={handleConfigSetting} speedConfig={handleSpeedSetting} aggregateData={aggregateData}/>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 {

@@ -11,7 +11,7 @@ import { getBoundingBox } from '../../services/api';
 import { ToastContainer, toast } from 'react-toastify';
 
 
-const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
+const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
   const [boundingBox, setBoundingBox] = useState(null);
@@ -40,6 +40,18 @@ const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
         initialized.current = true;
       }
     }, [user_config]);
+
+  // Updating  stats when aggregateData changes
+  useEffect(() => {
+    if (aggregateData) {
+      setStats({
+        highest: aggregateData.max_radiation ?? 'N/A',
+        lowest: aggregateData.min_radiation ?? 'N/A',
+        average: aggregateData.Average?.value ?? 'N/A',
+        stdDev: aggregateData.stddev ?? 'N/A'
+      });
+    }
+  }, [aggregateData]);
 
   const handleSubmit = async () => {
     const config = {
@@ -202,7 +214,6 @@ const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
             size='small'
           />
         </Box>
-
         <Box className="form-control">
           <Typography className="field-label" fontWeight="bold">Statistics</Typography>
           <Box className="stat-row">
@@ -212,7 +223,7 @@ const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
           <Box className="stat-row">
             <Typography variant="body2">Average: {stats.average} CPM</Typography>
             <Typography variant="body2">Std Dev: {stats.stdDev} CPM</Typography>
-          </Box>
+          </Box>    
         </Box>
       </Box>
     </LocalizationProvider>
