@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import logging
 import json
 from murmurhash2 import murmurhash2
+from fastapi.middleware.cors import CORSMiddleware
 
 # Loading  environment variables here
 load_dotenv()
@@ -90,6 +91,16 @@ async def lifespan(app: FastAPI):
             logger.info("Kafka Producer stopped")
 
 app = FastAPI(lifespan=lifespan)
+
+# CORS Middleware setup
+origins = ['*']
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 #  WebSocket Routes 
 @app.websocket("/data-stream")

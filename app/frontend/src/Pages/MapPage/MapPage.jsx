@@ -71,7 +71,6 @@ const MapPage = () => {
     const handleConfigSetting = async (data) => {
         try{
             const config = await setConfiguration(data);
-            setSocketDataMap({});
             toast.success(config.message,{
                 position: "top-center",
                 autoClose: 2000

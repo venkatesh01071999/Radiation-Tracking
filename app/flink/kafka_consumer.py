@@ -33,26 +33,28 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         bc_state.put(user_id, json.dumps(config)) # Store the config in the broadcast state
 
     def _operators(self, event, config):
-        default_return = True
-        captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT) 
+        try:
+            captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT)
+        except ValueError:
+            captured_time =  datetime.strptime(event['Captured Time'], "%Y-%m-%d %H:%M:%S.%f") 
         event['timestamp'] = captured_time.timestamp()  # Add timestamp for easier processing
 
         # OPERATOR 1 - Non Null Radiation Value
         radiation_value = event.get("Value")
         if radiation_value is None or radiation_value == "":
-            default_return = False
+            return False
 
         # OPERATOR 2 - Time Based Filtering
         if "timeframe" in config:
             timeframe = config["timeframe"]
             if "start" in timeframe:
-                start_time = datetime.strptime(timeframe.get("start"), TIME_FORMAT)      
+                start_time = datetime.strptime(timeframe.get("start"), TIME_FORMAT)
                 if captured_time < start_time:
-                    default_return = False
+                   return False
             if "end" in timeframe:
                 end_time = datetime.strptime(timeframe.get("end"), TIME_FORMAT)
                 if captured_time > end_time:
-                    default_return = False
+                    return False
         
         #OPERATOR 3 - Location Based Filtering
         # This is a bounding box filter
@@ -62,7 +64,8 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
             lat, lon = float(event['Latitude']), float(event['Longitude'])
             if not ((bounds[0] <= lat <= bounds[1]) and
                     (bounds[2] <= lon <= bounds[3])):
-                default_return = False
+                print(f"Location {lat}, {lon} is outside the bounding box {bounds}")
+                return False
                 
         #OPERATOR 4 - THRESHOLDTYPE-BASED COLOR TAGGING AND FILTERING
         threshold = config.get("threshold")
@@ -81,24 +84,21 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
                     event["status"] = "red"
                 else:
                     event["status"] = "green"
-                return True
 
             elif threshold_type == "above":
                 if float(radiation_value) > threshold:
                     event["status"] = "red"
-                    return True
                 else:
                     return False
 
             elif threshold_type == "below":
                 if float(radiation_value) < threshold:
                     event["status"] = "green"
-                    return True
                 else:
                     return False
 
 
-        return default_return
+        return True
 
     
     def process_element(self, value, ctx): # main data stream

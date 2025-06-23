@@ -63,8 +63,9 @@ const MapLeft = ({ user_config, submitConfig, speedConfig }) => {
     const selectedCountry = event.target.value;
     try {
       const boundingBox = await getBoundingBox(selectedCountry);
-      setBoundingBox(boundingBox[0].boundingbox);
-      setCentre([boundingBox[0].lat, boundingBox[0].lon]);
+      const mappedbb = boundingBox[0].boundingbox.map(Number);
+      setBoundingBox(mappedbb);
+      setCentre([Number(boundingBox[0].lat), Number(boundingBox[0].lon)]);
     } catch (error) {
       toast.error(error.message,{
           position: "top-center",
