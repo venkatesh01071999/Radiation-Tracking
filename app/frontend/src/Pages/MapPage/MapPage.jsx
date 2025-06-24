@@ -75,11 +75,13 @@ const MapPage = () => {
                             autoClose: 2000
                         });
                     },
-                    () => {
-                        toast('⚠️ Aggregate stream disconnected', {
-                            position: "top-center",
-                            autoClose: 2000
-                        });
+                    (e) => {
+                        if(e.code != 1006){
+                            toast('⚠️ Aggregate stream disconnected', {
+                                position: "top-center",
+                                autoClose: 2000
+                            });
+                        }
                     }
                 );
             }

@@ -45,12 +45,12 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
 
   // Updating  stats when aggregateData changes
   useEffect(() => {
-    if (aggregateData) {
+    if (Object.keys(aggregateData).length > 0) {
       setStats({
-        highest: aggregateData.max_radiation ?? 'N/A',
-        lowest: aggregateData.min_radiation ?? 'N/A',
-        average: aggregateData.Average?.value ?? 'N/A',
-        stdDev: aggregateData.stddev ?? 'N/A'
+        highest: Math.round(aggregateData.agg_data.max_radiation.value) ?? 'N/A',
+        lowest: Math.round(aggregateData.agg_data.min_radiation.value) ?? 'N/A',
+        average: Math.round(aggregateData.agg_data.Average?.value) ?? 'N/A',
+        stdDev:  Math.round(aggregateData.agg_data.stddev) ?? 'N/A'
       });
     }
   }, [aggregateData]);

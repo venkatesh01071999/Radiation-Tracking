@@ -14,12 +14,14 @@ import os
 from datetime import datetime
 import logging
 from shapely.geometry import Point, shape
+from shapely.prepared import prep
 
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+geometry_cache = {}
 # KeyedBroadcastProcessFunction must be inherited if we are connecting a broadcast stream with a keyed stream
 class DynamicFilterFunction(KeyedBroadcastProcessFunction):
     global TIME_FORMAT
@@ -31,9 +33,11 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         logger.info(f"Received config: {config}")
         bc_state = ctx.get_broadcast_state(self.config_descriptor) # Get the latest broadcast state
         user_id = config.pop("user")
+        geometry_cache[user_id] = prep(shape(config['geojson']))
+        del config['geojson']  # Remove geojson from the config to avoid storing large data in broadcast state 
         bc_state.put(user_id, json.dumps(config)) # Store the config in the broadcast state
 
-    def _operators(self, event, config):
+    def _operators(self, event, config, user):
         try:
             captured_time = datetime.strptime(event['Captured Time'], TIME_FORMAT)
         except ValueError:
@@ -60,11 +64,12 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         #OPERATOR 3 - Location Based Filtering
         # This is a bounding box filter
         # bounds[0] = lat_min, bounds[1] = lat_max, bounds[2] = lon_min, bounds[3] = lon_max
-        if "geojson" in config:
-            bounds = shape(config['geojson'])
+        if user in geometry_cache:
+            bounds = geometry_cache[user]
             point = Point(float(event['Longitude']), float(event['Latitude']))
-            print(f"{bounds.contains(point)}")
-            if not bounds.contains(point):
+            contains = bounds.contains(point)
+            print(f"contains point {point} in geojson: {contains}")
+            if not contains:
                 return False
             
                 
@@ -111,7 +116,7 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         for user in bc_state.keys():
             config = json.loads(bc_state.get(user))
             for record in records:
-                if self._operators(record, config):
+                if self._operators(record, config, user):
                     record_copy = record.copy()
                     record_copy["user"] = user
                     record_copy["country"] = config.get("country", "")
