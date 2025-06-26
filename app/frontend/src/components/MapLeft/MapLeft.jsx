@@ -143,7 +143,7 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, downlo
         <Box className="form-control">
           <Typography className="field-label">Country</Typography>
           <FormControl fullWidth size='small'>
-            <Select  value={country || ''} onChange={() => handleCountryChange()}>
+            <Select  value={country || ''} onChange={handleCountryChange}>
               {countries.map(c => (
                 <MenuItem key={c} value={c}>{c}</MenuItem>
               ))}
