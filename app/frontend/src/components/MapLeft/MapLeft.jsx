@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button,Radio,RadioGroup, FormControlLabel} 
+import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button,Radio,RadioGroup, FormControlLabel, Tooltip} 
 from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -14,8 +14,9 @@ import { ToastContainer, toast } from 'react-toastify';
 const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
-  const [boundingBox, setBoundingBox] = useState(null);
-  const [centre, setCentre] = useState(null);
+  const boundingBox = useRef(null);
+  const centre = useRef(null);
+  const geojson = useRef(null);
   const [thresholdType, setThresholdType] = useState('');
   const [speed, setSpeed] = useState(1);
   const [from, setFrom] = useState(null);
@@ -25,7 +26,11 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
     highest: '',
     lowest: '',
     average: '',
-    stdDev: ''
+    stdDev: '',
+    highestLat: '',
+    highestLon: '',
+    lowestLat: '',
+    lowestLon: ''
   });
 
   useEffect(() => {
@@ -33,22 +38,27 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
         setCountry(user_config.country);
         setThreshold(user_config.threshold);
         setThresholdType(user_config['threshold-type']);
-        setBoundingBox(user_config.boundingbox);
+        boundingBox.current = user_config.boundingbox;
+        geojson.current = user_config.geojson;
         setFrom(user_config.timeframe?.start ? dayjs(user_config.timeframe.start) : null);
         setTo(user_config.timeframe?.end ? dayjs(user_config.timeframe.end) : null);
-        setCentre(user_config.centre);
+        centre.current = user_config.centre;
         initialized.current = true;
       }
     }, [user_config]);
 
   // Updating  stats when aggregateData changes
   useEffect(() => {
-    if (aggregateData) {
+    if (Object.keys(aggregateData).length > 0) {
       setStats({
-        highest: aggregateData.max_radiation ?? 'N/A',
-        lowest: aggregateData.min_radiation ?? 'N/A',
-        average: aggregateData.Average?.value ?? 'N/A',
-        stdDev: aggregateData.stddev ?? 'N/A'
+        highest: Math.round(aggregateData.agg_data.max_radiation.value),
+        lowest: Math.round(aggregateData.agg_data.min_radiation.value),
+        average: Math.round(aggregateData.agg_data.Average?.value),
+        stdDev:  Math.round(aggregateData.agg_data.stddev),
+        highestLat: aggregateData.agg_data.max_radiation.lat,
+        highestLon: aggregateData.agg_data.max_radiation.lon,
+        lowestLat: aggregateData.agg_data.min_radiation.lat,
+        lowestLon: aggregateData.agg_data.min_radiation.lon
       });
     }
   }, [aggregateData]);
@@ -58,9 +68,10 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
       country,
       threshold,
       'threshold-type': thresholdType,
-      'boundingbox': boundingBox,
-      centre,
-      'user': user_config.user
+      'boundingbox': boundingBox.current,
+      'centre': centre.current,
+      'user': user_config.user,
+      'geojson': geojson.current,
     };
     if (from) {
       config.timeframe = { start: from.format('YYYY-MM-DD HH:mm:ss') };
@@ -74,10 +85,11 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
   const handleCountryChange = async (event) => {
     const selectedCountry = event.target.value;
     try {
-      const boundingBox = await getBoundingBox(selectedCountry);
-      const mappedbb = boundingBox[0].boundingbox.map(Number);
-      setBoundingBox(mappedbb);
-      setCentre([Number(boundingBox[0].lat), Number(boundingBox[0].lon)]);
+      const boundingbox = await getBoundingBox(selectedCountry);
+      const mappedbb = boundingbox[0].boundingbox.map(Number);
+      boundingBox.current = mappedbb;
+      centre.current = [Number(boundingbox[0].lat), Number(boundingbox[0].lon)];
+      geojson.current = boundingbox[0].geojson;
     } catch (error) {
       toast.error(error.message,{
           position: "top-center",
@@ -217,8 +229,27 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
         <Box className="form-control">
           <Typography className="field-label" fontWeight="bold">Statistics</Typography>
           <Box className="stat-row">
-            <Typography variant="body2">Highest: {stats.highest} CPM</Typography>
-            <Typography variant="body2">Lowest: {stats.lowest} CPM</Typography>
+            <Tooltip 
+            placement='top' 
+            title={
+            <>
+              <div style={{marginBottom:'5px'}}>Lat: {stats.highestLat}</div>
+              <div>Lon: {stats.highestLon}</div>
+            </>}
+            >
+              <Typography variant="body2">Highest: {stats.highest} CPM</Typography>
+            </Tooltip>
+            <Tooltip
+              placement="top"
+              title={
+                <>
+                  <div style={{marginBottom:'5px'}}>Lat: {stats.lowestLat}</div>
+                  <div>Lon: {stats.lowestLon}</div>
+                </>
+              }
+            >
+              <Typography variant="body2">Lowest: {stats.lowest} CPM</Typography>
+            </Tooltip>
           </Box>
           <Box className="stat-row">
             <Typography variant="body2">Average: {stats.average} CPM</Typography>

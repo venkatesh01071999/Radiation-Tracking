@@ -4,3 +4,4 @@ fastapi[standard]
 aiokafka
 murmurhash2
 pydantic
+starlette

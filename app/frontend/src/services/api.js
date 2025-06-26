@@ -1,7 +1,7 @@
 export const getBoundingBox = async (country) => {
     const OSM_URL = process.env.REACT_APP_OSM_URL;
     try{
-        const response = await fetch(`${OSM_URL}/search?country=${country}&format=json`);
+        const response = await fetch(`${OSM_URL}/search?country=${country}&polygon_geojson=1&format=json`);
         if (!response.ok) {
             throw new Error('Failed to fetch bounding box');
         }
