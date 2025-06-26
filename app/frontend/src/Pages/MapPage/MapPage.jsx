@@ -92,6 +92,43 @@ const MapPage = () => {
         }
     },[]);
 
+    function toCsv(obj){
+        const rows = Object.entries(obj).map(([key, vals]) => ({
+            id: key,
+            ...vals
+        }));
+
+        const headers = Object.keys(rows[0]);
+        
+        const esc = v =>
+            `"${String(v).replace(/"/g, '""')}"`;
+
+        const lines = [
+            headers.map(esc).join(','),
+            ...rows.map(r => headers.map(h => esc(r[h] ?? '')).join(','))
+        ];
+
+        return lines.join('\r\n');
+    }
+    
+    const downloadDocument = () => {
+        if(Object.keys(socketDataMap).length !== 0){  
+            const csv = toCsv(socketDataMap);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url  = URL.createObjectURL(blob);
+            // make temporary link
+            const link = Object.assign(document.createElement('a'), {
+                href: url,
+                download: 'radiation.csv',
+                style: 'display:none'
+            });
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    }
+
     const handleConfigSetting = async (data) => {
         try{
             const config = await setConfiguration(data);
@@ -136,7 +173,7 @@ const MapPage = () => {
                 borderRight: '1px solid #ddd',
                 }}
             >
-                <MapLeft user_config={config} submitConfig={handleConfigSetting} speedConfig={handleSpeedSetting} aggregateData={aggregateData}/>
+                <MapLeft user_config={config} submitConfig={handleConfigSetting} speedConfig={handleSpeedSetting} aggregateData={aggregateData} download={downloadDocument}/>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 {
