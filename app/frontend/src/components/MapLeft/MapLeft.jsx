@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button,Radio,RadioGroup, FormControlLabel, Tooltip} 
+import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button,Radio,RadioGroup, FormControlLabel, Tooltip, IconButton} 
 from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -9,9 +9,10 @@ import './mapleft.css';
 import { countries } from '../../config/countries';
 import { getBoundingBox } from '../../services/api';
 import { ToastContainer, toast } from 'react-toastify';
+import DownloadIcon from '@mui/icons-material/Download';
 
 
-const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
+const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, download}) => {
   const [country, setCountry] = useState('');
   const [threshold, setThreshold] = useState(0);
   const boundingBox = useRef(null);
@@ -128,12 +129,17 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
     speedConfig(value);
   };
 
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ToastContainer />
       <Box className="map-left-container">
-        <Typography variant="h6" className="section-title">Configuration Settings</Typography>
-
+        <Box className="header" sx={{ display: 'flex'}}>
+          <Typography variant="h6" className="section-title">Configuration Settings</Typography>
+          <IconButton aria-label="download document" sx={{ml: 3}} onClick={() => download()}>
+            <DownloadIcon/>
+          </IconButton>
+        </Box>
         <Box className="form-control">
           <Typography className="field-label">Country</Typography>
           <FormControl fullWidth size='small'>
