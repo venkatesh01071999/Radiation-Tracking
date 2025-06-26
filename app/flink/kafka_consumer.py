@@ -33,7 +33,7 @@ class DynamicFilterFunction(KeyedBroadcastProcessFunction):
         logger.info(f"Received config: {config}")
         bc_state = ctx.get_broadcast_state(self.config_descriptor) # Get the latest broadcast state
         user_id = config.pop("user")
-        geometry_cache[user_id] = prep(shape(config['geojson']))
+        geometry_cache[user_id] = shape(config['geojson'])
         del config['geojson']  # Remove geojson from the config to avoid storing large data in broadcast state 
         bc_state.put(user_id, json.dumps(config)) # Store the config in the broadcast state
 

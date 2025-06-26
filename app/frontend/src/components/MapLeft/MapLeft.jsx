@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button,Radio,RadioGroup, FormControlLabel} 
+import {Box,Typography, Select,MenuItem,TextField,Slider,FormControl,Button,Radio,RadioGroup, FormControlLabel, Tooltip} 
 from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -26,7 +26,11 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
     highest: '',
     lowest: '',
     average: '',
-    stdDev: ''
+    stdDev: '',
+    highestLat: '',
+    highestLon: '',
+    lowestLat: '',
+    lowestLon: ''
   });
 
   useEffect(() => {
@@ -47,10 +51,14 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
   useEffect(() => {
     if (Object.keys(aggregateData).length > 0) {
       setStats({
-        highest: Math.round(aggregateData.agg_data.max_radiation.value) ?? 'N/A',
-        lowest: Math.round(aggregateData.agg_data.min_radiation.value) ?? 'N/A',
-        average: Math.round(aggregateData.agg_data.Average?.value) ?? 'N/A',
-        stdDev:  Math.round(aggregateData.agg_data.stddev) ?? 'N/A'
+        highest: Math.round(aggregateData.agg_data.max_radiation.value),
+        lowest: Math.round(aggregateData.agg_data.min_radiation.value),
+        average: Math.round(aggregateData.agg_data.Average?.value),
+        stdDev:  Math.round(aggregateData.agg_data.stddev),
+        highestLat: aggregateData.agg_data.max_radiation.lat,
+        highestLon: aggregateData.agg_data.max_radiation.lon,
+        lowestLat: aggregateData.agg_data.min_radiation.lat,
+        lowestLon: aggregateData.agg_data.min_radiation.lon
       });
     }
   }, [aggregateData]);
@@ -221,8 +229,27 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData}) => {
         <Box className="form-control">
           <Typography className="field-label" fontWeight="bold">Statistics</Typography>
           <Box className="stat-row">
-            <Typography variant="body2">Highest: {stats.highest} CPM</Typography>
-            <Typography variant="body2">Lowest: {stats.lowest} CPM</Typography>
+            <Tooltip 
+            placement='top' 
+            title={
+            <>
+              <div style={{marginBottom:'5px'}}>Lat: {stats.highestLat}</div>
+              <div>Lon: {stats.highestLon}</div>
+            </>}
+            >
+              <Typography variant="body2">Highest: {stats.highest} CPM</Typography>
+            </Tooltip>
+            <Tooltip
+              placement="top"
+              title={
+                <>
+                  <div style={{marginBottom:'5px'}}>Lat: {stats.lowestLat}</div>
+                  <div>Lon: {stats.lowestLon}</div>
+                </>
+              }
+            >
+              <Typography variant="body2">Lowest: {stats.lowest} CPM</Typography>
+            </Tooltip>
           </Box>
           <Box className="stat-row">
             <Typography variant="body2">Average: {stats.average} CPM</Typography>
