@@ -1,0 +1,9 @@
+FROM python:3.13-slim
+
+WORKDIR /app/middleware
+
+COPY app/middleware .
+
+RUN pip install -r requirements.txt
+
+CMD ["sh", "-c", "sleep 15 && fastapi run api_socket.py"]
