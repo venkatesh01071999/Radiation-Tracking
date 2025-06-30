@@ -46,6 +46,8 @@ services:
       context: .
       dockerfile: Dockerfile.Middleware
     container_name: middleware
+    ports:
+      - "8000:8000"
     networks:
       - common-network
     depends_on:
