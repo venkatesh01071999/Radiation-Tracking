@@ -57,6 +57,21 @@ services:
       PROCESSED_TOPIC: processed-topic
       AGGREGATE_TOPIC: aggregate-topic
       CONFIG_TOPIC: configuration-topic
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.UI
+    container_name: ui
+    ports:
+      - "3000:3000"
+    networks:
+      - common-network
+    depends_on:
+      - middleware
+    environment:
+      REACT_APP_SOCKET_URL: ws://localhost:8000
+      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_OSM_URL: https://nominatim.openstreetmap.org
 
   jobmanager:
     build:
@@ -80,8 +95,9 @@ services:
       - common-network
     environment:
       JOB_MANAGER_RPC_ADDRESS: jobmanager
-      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "64" # same as the number of partitions
-    command: taskmanager -Dtaskmanager.numberOfTaskSlots=64
+      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "140" #  greater than partition count
+    command: taskmanager -Dtaskmanager.numberOfTaskSlots=140
+
 
   submit_job:
     build:
