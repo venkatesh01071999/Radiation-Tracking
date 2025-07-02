@@ -49,9 +49,7 @@ export const connectAggregateSocket = (user, onMessage, onOpen, onClose) => {
     aggregateSocket.onclose = onClose;
     aggregateSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (!('type' in data)) {
-            onMessage(data);
-        }
+        onMessage(data);
     };
 };
 

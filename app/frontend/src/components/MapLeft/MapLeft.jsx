@@ -54,16 +54,29 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, downlo
   // Updating  stats when aggregateData changes
   useEffect(() => {
     if (Object.keys(aggregateData).length > 0) {
-      setStats({
-        highest: Math.round(aggregateData.agg_data.max_radiation.value),
-        lowest: Math.round(aggregateData.agg_data.min_radiation.value),
-        average: Math.round(aggregateData.agg_data.Average?.value),
-        stdDev:  Math.round(aggregateData.agg_data.stddev),
-        highestLat: aggregateData.agg_data.max_radiation.lat,
-        highestLon: aggregateData.agg_data.max_radiation.lon,
-        lowestLat: aggregateData.agg_data.min_radiation.lat,
-        lowestLon: aggregateData.agg_data.min_radiation.lon
-      });
+      if('type' in aggregateData){
+        setStats({
+          highest: '',
+          lowest: '',
+          average: '',
+          stdDev: '',
+          highestLat: '',
+          highestLon: '',
+          lowestLat: '',
+          lowestLon: ''
+        })
+      } else{
+        setStats({
+          highest: Math.round(aggregateData.agg_data.max_radiation.value),
+          lowest: Math.round(aggregateData.agg_data.min_radiation.value),
+          average: Math.round(aggregateData.agg_data.Average?.value),
+          stdDev:  Math.round(aggregateData.agg_data.stddev),
+          highestLat: aggregateData.agg_data.max_radiation.lat,
+          highestLon: aggregateData.agg_data.max_radiation.lon,
+          lowestLat: aggregateData.agg_data.min_radiation.lat,
+          lowestLon: aggregateData.agg_data.min_radiation.lon
+        });
+      }
     }
   }, [aggregateData]);
 
@@ -88,16 +101,6 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, downlo
 
   const handleCountryChange = async (event) => {
     const selectedCountry = event.target.value;
-    setStats({
-      highest: '',
-      lowest: '',
-      average: '',
-      stdDev: '',
-      highestLat: '',
-      highestLon: '',
-      lowestLat: '',
-      lowestLon: ''
-    })
     try {
       const boundingbox = await getBoundingBox(selectedCountry);
       const mappedbb = boundingbox[0].boundingbox.map(Number);
