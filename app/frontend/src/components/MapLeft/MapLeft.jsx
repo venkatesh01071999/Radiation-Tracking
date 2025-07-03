@@ -10,6 +10,8 @@ import { countries } from '../../config/countries';
 import { getBoundingBox } from '../../services/api';
 import { ToastContainer, toast } from 'react-toastify';
 import DownloadIcon from '@mui/icons-material/Download';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useNavigate } from 'react-router-dom';
 
 
 const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, download}) => {
@@ -33,6 +35,7 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, downlo
     lowestLat: '',
     lowestLon: ''
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
       if (Object.keys(user_config).length > 0 && !initialized.current) {
@@ -51,16 +54,29 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, downlo
   // Updating  stats when aggregateData changes
   useEffect(() => {
     if (Object.keys(aggregateData).length > 0) {
-      setStats({
-        highest: Math.round(aggregateData.agg_data.max_radiation.value),
-        lowest: Math.round(aggregateData.agg_data.min_radiation.value),
-        average: Math.round(aggregateData.agg_data.Average?.value),
-        stdDev:  Math.round(aggregateData.agg_data.stddev),
-        highestLat: aggregateData.agg_data.max_radiation.lat,
-        highestLon: aggregateData.agg_data.max_radiation.lon,
-        lowestLat: aggregateData.agg_data.min_radiation.lat,
-        lowestLon: aggregateData.agg_data.min_radiation.lon
-      });
+      if('type' in aggregateData){
+        setStats({
+          highest: '',
+          lowest: '',
+          average: '',
+          stdDev: '',
+          highestLat: '',
+          highestLon: '',
+          lowestLat: '',
+          lowestLon: ''
+        })
+      } else{
+        setStats({
+          highest: Math.round(aggregateData.agg_data.max_radiation.value),
+          lowest: Math.round(aggregateData.agg_data.min_radiation.value),
+          average: Math.round(aggregateData.agg_data.Average?.value),
+          stdDev:  Math.round(aggregateData.agg_data.stddev),
+          highestLat: aggregateData.agg_data.max_radiation.lat,
+          highestLon: aggregateData.agg_data.max_radiation.lon,
+          lowestLat: aggregateData.agg_data.min_radiation.lat,
+          lowestLon: aggregateData.agg_data.min_radiation.lon
+        });
+      }
     }
   }, [aggregateData]);
 
@@ -129,6 +145,10 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, downlo
     speedConfig(value);
   };
 
+  const logout = () => {
+    localStorage.removeItem('userConfig');
+    navigate('/');
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -136,8 +156,11 @@ const MapLeft = ({ user_config, submitConfig, speedConfig, aggregateData, downlo
       <Box className="map-left-container">
         <Box className="header" sx={{ display: 'flex'}}>
           <Typography variant="h6" className="section-title">Configuration Settings</Typography>
-          <IconButton aria-label="download document" sx={{ml: 3}} onClick={() => download()}>
+          <IconButton aria-label="download document" sx={{ml: 1}} onClick={() => download()}>
             <DownloadIcon/>
+          </IconButton>
+          <IconButton aria-label="logout" sx={{ml: 1}} onClick={() => logout()}>
+            <LogoutIcon/>
           </IconButton>
         </Box>
         <Box className="form-control">
