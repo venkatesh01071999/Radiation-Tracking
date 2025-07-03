@@ -10,6 +10,7 @@
     2. `./kafka-topics.sh --create --topic configuration-topic --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1`
     3. `./kafka-topics.sh --create --topic processed-topic --bootstrap-server localhost:9092 --partitions 64 --replication-factor 1`
     4. `./kafka-topics.sh --create --topic aggregate-topic --bootstrap-server localhost:9092 --partitions 64 --replication-factor 1`
+    5. `./kafka-configs.sh --bootstrap-server kafka:9092 --alter --entity-type topics --entity-name configuration-topic --add-config max.message.bytes=10485880`
 4) Move to `app/kafka` in the project directory.
 5) pip install -r requirements.txt
 6) Set the environment variables by creating a **.env** file.
@@ -24,5 +25,33 @@
 4) pip install -r requirements.txt
 5) Set the environment variables by creating a **.env** file. Especially JAR files path in the format `file:///`
 6) `python kafka_consumer.py` to start processing.
-7) Once Flink app is started, start the kafka provider by moving to `app/kafka` directory and run `python kafka_stream.py`
+
+## Steps to setup Middleware
+1) Move to `app/middleware` in the project directory.
+2) pip install -r requirements.txt
+3) fastapi run api_socket.py
+
+## Steps to setup UI
+1) Move to `app/frontend` in the project directory.
+2) npm i
+3) Set the environment variables by creating a **.env** file.
+4) npm start
+5) Once UI is started, start the kafka provider by moving to `app/kafka` directory and run `python kafka_stream.py`
+
+## Hint
+1) For the environment variables for each service refer `docker-compose.yml` file.
+
+# Docker Setup
+1) Install Docker from [Docker Website](https://www.docker.com/)
+2) The docker images for the project is under the namespace **venky01071999**.
+3) List of Docker Images
+    1. `venky01071999/producer`
+    2. `venky01071999/flink-submit-job`
+    3. `venky01071999/flink-taskmanager`
+    4. `venky01071999/ui`
+    5. `venky01071999/flink-jobmanager`
+    6. `venky01071999/middleware`
+4) Move to the root of the project.
+5) Pull the images using the commmand `docker-compose pull`
+6) Start the container using `docker-compose up -d`
 
