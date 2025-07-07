@@ -42,9 +42,6 @@ services:
       "
 
   middleware:
-    build:
-      context: .
-      dockerfile: Dockerfile.Middleware
     container_name: middleware
     image: venky01071999/middleware:latest
     ports:
@@ -59,9 +56,6 @@ services:
       AGGREGATE_TOPIC: aggregate-topic
       CONFIG_TOPIC: configuration-topic
   ui:
-    build:
-      context: .
-      dockerfile: Dockerfile.UI
     container_name: ui
     image: venky01071999/ui:latest
     ports:
@@ -76,9 +70,6 @@ services:
       REACT_APP_OSM_URL: https://nominatim.openstreetmap.org
 
   jobmanager:
-    build:
-      context: .
-      dockerfile: Dockerfile.Flink
     container_name: flink-jobmanager
     image: venky01071999/flink-jobmanager:latest
     networks:
@@ -90,9 +81,6 @@ services:
       JOB_MANAGER_RPC_ADDRESS: jobmanager
 
   taskmanager:
-    build:
-      context: .
-      dockerfile: Dockerfile.Flink
     container_name: flink-taskmanager
     image: venky01071999/flink-taskmanager:latest
     networks:
@@ -104,9 +92,6 @@ services:
 
 
   submit_job:
-    build:
-      context: .
-      dockerfile: Dockerfile.Flink
     container_name: flink-submit-job
     image: venky01071999/flink-submit-job:latest
     networks:
