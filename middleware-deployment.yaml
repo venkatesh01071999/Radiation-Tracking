@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    io.kompose.service: middleware
+  name: middleware
+spec:
+  containers:
+    - env:
+        - name: AGGREGATE_TOPIC
+          value: aggregate-topic
+        - name: CONFIG_TOPIC
+          value: configuration-topic
+        - name: KAFKA_CLIENT
+          value: kafka:9092
+        - name: PROCESSED_TOPIC
+          value: processed-topic
+      image: bdacr2025.azurecr.io/middleware:v1
+      name: middleware
+      ports:
+        - containerPort: 8000
+          protocol: TCP
+  restartPolicy: Never
