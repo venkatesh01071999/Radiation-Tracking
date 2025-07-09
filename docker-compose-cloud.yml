@@ -77,6 +77,8 @@ services:
       - common-network
     ports:
       - "8081:8081"
+      - "6123:6123"
+      - "6124:6124"
     command: jobmanager
     environment:
       JOB_MANAGER_RPC_ADDRESS: jobmanager
@@ -88,8 +90,8 @@ services:
       - common-network
     environment:
       JOB_MANAGER_RPC_ADDRESS: jobmanager
-      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "140" #  greater than partition count
-    command: taskmanager -Dtaskmanager.numberOfTaskSlots=140
+      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "3" #  greater than partition count
+    command: taskmanager -Dtaskmanager.numberOfTaskSlots=3
   
   submit_job:
     container_name: flink-submit-job
