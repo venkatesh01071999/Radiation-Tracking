@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    io.kompose.service: jobmanager
+  name: jobmanager
+spec:
+  ports:
+    - name: "8081"
+      port: 8081
+      targetPort: 8081
+    - name: "6123"
+      port: 6123
+      targetPort: 6123
+    - name: "6124"
+      port: 6124
+      targetPort: 6124
+  selector:
+    io.kompose.service: jobmanager
