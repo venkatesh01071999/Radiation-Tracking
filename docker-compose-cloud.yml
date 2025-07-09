@@ -72,7 +72,7 @@ services:
   
   jobmanager:
     container_name: flink-jobmanager
-    image: bdacr2025.azurecr.io/flink:v1
+    image: bdacr2025.azurecr.io/flink:v2
     networks:
       - common-network
     ports:
@@ -85,17 +85,17 @@ services:
   
   taskmanager:
     container_name: flink-taskmanager
-    image: bdacr2025.azurecr.io/flink:v1
+    image: bdacr2025.azurecr.io/flink:v2
     networks:
       - common-network
     environment:
       JOB_MANAGER_RPC_ADDRESS: jobmanager
-      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "3" #  greater than partition count
-    command: taskmanager -Dtaskmanager.numberOfTaskSlots=3
+      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "140" #  greater than partition count
+    command: taskmanager -Dtaskmanager.numberOfTaskSlots=140
   
   submit_job:
     container_name: flink-submit-job
-    image: bdacr2025.azurecr.io/flink:v1
+    image: bdacr2025.azurecr.io/flink:v2
     networks:
       - common-network
     depends_on:
