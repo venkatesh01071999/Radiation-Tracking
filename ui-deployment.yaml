@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: ui
+  name: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: ui
+  template:
+    metadata:
+      labels:
+        io.kompose.service: ui
+    spec:
+      containers:
+        - env:
+            - name: REACT_APP_API_URL
+              value: http://20.75.243.199:8000 # The url is subject to change because of dynamic ip.
+            - name: REACT_APP_OSM_URL
+              value: https://nominatim.openstreetmap.org
+            - name: REACT_APP_SOCKET_URL
+              value: ws://20.75.243.199:8000 # The url is subject to change because of dynamic ip.
+          image: bdacr2025.azurecr.io/ui:v1
+          name: ui
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+      restartPolicy: Always
