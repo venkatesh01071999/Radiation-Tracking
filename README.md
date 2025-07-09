@@ -55,3 +55,23 @@
 5) Pull the images using the commmand `docker-compose pull`
 6) Start the container using `docker-compose up -d`
 
+# Cloud Details
+1) The project is deployed in **Azure Cloud Environment**.
+2) Services used for the Project - **Azure Kubernetes Service(AKS)**, **Azure Container Registry(ACR)**
+3) **ACR** is used for storing the docker images to be used by the AKS.
+4) **AKS** is used to deploy the application in a scalable fashion.
+5) Compute node used for AKS **Standard_B2ms** which comrises of 2VCPU and 8GB memory.
+6) Node count = 2.
+8) Totally 3 Deployments and 9 Pods where each services have 1 replica except Task Manager of Flink which will have 2 replica to process real-time data.
+9) Two of these Pods are Load Balancers to expose to the real world. (Ui, Middleware)
+10) Static IP's or domain names are not purchased, so the IP's used in the `docker-compose-cloud.yml` file is subjected to change.
+
+## High Level Cloud Setup instruction
+1) Enable Insights, OperationalInsights, ContainerService, ContainerRegistry to setup ACR, AKS.
+2) Setup ACR.
+3) Setup AKS.
+4) Setup a connection between AKS and ACR to allow AKS to pull images from ACR.
+5) Push all the built and tagged docker files to ACR.
+6) **kubectl apply** all the deployment and service files.
+
+

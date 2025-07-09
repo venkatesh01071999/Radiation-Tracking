@@ -6,6 +6,8 @@ services:
     ports:
       - "9092:9092"
     container_name: kafka
+    networks:
+      - common-network
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -22,32 +24,104 @@ services:
 
   init-kafka:
     image: apache/kafka:latest
+    networks:
+      - common-network
     depends_on:
       - kafka
-    entrypoint: ["/bin/bash", "-c"]
-    command: |
+    entrypoint: |
+      bash -c "
+        echo 'Waiting for Kafka to be ready...'
+        sleep 10
+        echo 'Creating topics...'
+        /opt/kafka/bin/kafka-topics.sh --create --topic radiation-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic configuration-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic processed-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic aggregate-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
+        /opt/kafka/bin/kafka-configs.sh --bootstrap-server kafka:9092 --alter --entity-type topics --entity-name configuration-topic --add-config max.message.bytes=10485880
+        echo 'Topics created successfully'
       "
-      cd /opt/kafka/bin
-      ./kafka-topics.sh --create --topic radiation-topic --bootstrap-server kafka:9092 -partitions 1 --replication-factor 1
-      "
-
-  kafka-consumer:
-    image: apache/kafka:latest
+      
+  middleware:
+    container_name: middleware
+    image: bdacr2025.azurecr.io/middleware:v1
+    ports:
+      - "8000:8000"
+    networks:
+      - common-network
     depends_on:
-      - kafka
-    entrypoint: ["/bin/bash", "-c"]
-    command: |
+      - init-kafka
+    environment:
+      KAFKA_CLIENT: kafka:9092
+      PROCESSED_TOPIC: processed-topic
+      AGGREGATE_TOPIC: aggregate-topic
+      CONFIG_TOPIC: configuration-topic
+  
+  ui:
+    container_name: ui
+    image: bdacr2025.azurecr.io/ui:v1
+    ports:
+      - "3000:3000"
+    networks:
+      - common-network
+    depends_on:
+      - middleware
+    environment:
+      REACT_APP_SOCKET_URL: ws://localhost:8000
+      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_OSM_URL: https://nominatim.openstreetmap.org
+  
+  jobmanager:
+    container_name: flink-jobmanager
+    image: bdacr2025.azurecr.io/flink:v2
+    networks:
+      - common-network
+    ports:
+      - "8081:8081"
+      - "6123:6123"
+      - "6124:6124"
+    command: jobmanager
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: jobmanager
+  
+  taskmanager:
+    container_name: flink-taskmanager
+    image: bdacr2025.azurecr.io/flink:v2
+    networks:
+      - common-network
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: jobmanager
+      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "140" #  greater than partition count
+    command: taskmanager -Dtaskmanager.numberOfTaskSlots=140
+  
+  submit_job:
+    container_name: flink-submit-job
+    image: bdacr2025.azurecr.io/flink:v2
+    networks:
+      - common-network
+    depends_on:
+      - jobmanager
+      - taskmanager
+      - init-kafka
+    environment:
+      KAFKA_CLIENT: kafka:9092
+      KAFKA_TOPIC: radiation-topic
+      CONFIG_TOPIC: configuration-topic
+      PROCESSED_TOPIC: processed-topic
+      AGGREGATE_TOPIC: aggregate-topic
+      FLINK_PROPERTIES: "jobmanager.rpc.address: jobmanager"
+    entrypoint: |
+      bash -c "
+        sleep 15
+        flink run -d -py kafka_consumer.py --jobmanager jobmanager:8081
       "
-      cd /opt/kafka/bin
-      ./kafka-console-consumer.sh --from-beginning --bootstrap-server localhost:9092 --topic radiation-topic
-      "
-
 
   producer:
     image: bdacr2025.azurecr.io/producer:v1 # pushed image to ACR
     container_name: producer
+    networks:
+      - common-network
     depends_on:
-      - init-kafka
+      - submit_job
     environment:
       KAFKA_CLIENT: kafka:9092
       CSV_FILE: /app/kafka/Data/measurements-out.csv
@@ -57,3 +131,7 @@ services:
       MESSAGE_DELAY: 0.5
       FLUSH_INTERVAL: 10
       SUBMISSION_INTERVAL: 0.5
+
+networks:
+  common-network:
+    driver: bridge

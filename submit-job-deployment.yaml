@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    io.kompose.service: submit-job
+  name: submit-job
+spec:
+  containers:
+    - command:
+        - bash
+        - -c
+        - |2
+            sleep 15
+            flink run -d -py kafka_consumer.py --jobmanager jobmanager:8081
+      env:
+        - name: AGGREGATE_TOPIC
+          value: aggregate-topic
+        - name: CONFIG_TOPIC
+          value: configuration-topic
+        - name: FLINK_PROPERTIES
+          value: 'jobmanager.rpc.address: jobmanager'
+        - name: KAFKA_CLIENT
+          value: kafka:9092
+        - name: KAFKA_TOPIC
+          value: radiation-topic
+        - name: PROCESSED_TOPIC
+          value: processed-topic
+      image: bdacr2025.azurecr.io/flink:v2
+      name: flink-submit-job
+  restartPolicy: Never
