@@ -17,19 +17,19 @@ spec:
       containers:
         - args:
             - taskmanager
-            - -Dtaskmanager.numberOfTaskSlots=70
+            - -Dtaskmanager.numberOfTaskSlots=6
           env:
             - name: JOB_MANAGER_RPC_ADDRESS
               value: jobmanager
             - name: TASKMANAGER_NUMBER_OF_TASK_SLOTS
-              value: "70"
+              value: "6"
           image: bdacr2025.azurecr.io/flink:v2
           name: flink-taskmanager
       resources:
         requests:
-          memory: "4Gi"
+          memory: "2Gi"
           cpu: "1"
         limits:
-          memory: "5Gi"
+          memory: "2Gi"
           cpu: "2"
       restartPolicy: Always

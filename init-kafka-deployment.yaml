@@ -15,8 +15,8 @@ spec:
             echo 'Creating topics...'
             /opt/kafka/bin/kafka-topics.sh --create --topic radiation-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
             /opt/kafka/bin/kafka-topics.sh --create --topic configuration-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
-            /opt/kafka/bin/kafka-topics.sh --create --topic processed-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
-            /opt/kafka/bin/kafka-topics.sh --create --topic aggregate-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
+            /opt/kafka/bin/kafka-topics.sh --create --topic processed-topic --bootstrap-server kafka:9092 --partitions 4 --replication-factor 1
+            /opt/kafka/bin/kafka-topics.sh --create --topic aggregate-topic --bootstrap-server kafka:9092 --partitions 4 --replication-factor 1
             /opt/kafka/bin/kafka-configs.sh --bootstrap-server kafka:9092 --alter --entity-type topics --entity-name configuration-topic --add-config max.message.bytes=10485880
             echo 'Topics created successfully'
       image: apache/kafka:latest

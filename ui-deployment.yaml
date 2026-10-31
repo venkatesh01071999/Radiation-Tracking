@@ -17,11 +17,11 @@ spec:
       containers:
         - env:
             - name: REACT_APP_API_URL
-              value: http://20.75.243.199:8000 # The url is subject to change because of dynamic ip.
+              value: http://172.171.50.175:8000 # The url is subject to change because of dynamic ip.
             - name: REACT_APP_OSM_URL
               value: https://nominatim.openstreetmap.org
             - name: REACT_APP_SOCKET_URL
-              value: ws://20.75.243.199:8000 # The url is subject to change because of dynamic ip.
+              value: ws://172.171.50.175:8000 # The url is subject to change because of dynamic ip.
           image: bdacr2025.azurecr.io/ui:v1
           name: ui
           ports:

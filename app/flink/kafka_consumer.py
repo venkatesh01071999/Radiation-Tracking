@@ -293,7 +293,7 @@ def kafka_to_kafka_json():
             'key.format' = 'raw',
             'key.fields' = 'user',
             'value.format' = 'json',
-            'sink.parallelism' = '64'
+            'sink.parallelism' = '4'
         )
     """)
 
@@ -328,7 +328,7 @@ def kafka_to_kafka_json():
             'key.format' = 'raw',
             'key.fields' = 'user_id',
             'value.format' = 'json',
-            'sink.parallelism' = '64'
+            'sink.parallelism' = '4'
         )
     """)  
     agg_table.execute_insert("aggregate_sink")  

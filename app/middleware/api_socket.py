@@ -74,7 +74,7 @@ def get_sleep_time(speed):
 
 
 def get_partition_for_user(username: str) -> int:
-    return murmurhash2(username.encode('utf-8'), 0x9747b28c) % 64 # default partitionining strategy of kafka
+    return murmurhash2(username.encode('utf-8'), 0x9747b28c) % 4 # default partitionining strategy of kafka
 
 
 async def create_consumer(topic: str, partition: int):

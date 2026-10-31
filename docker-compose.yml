@@ -35,15 +35,17 @@ services:
         echo 'Creating topics...'
         /opt/kafka/bin/kafka-topics.sh --create --topic radiation-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
         /opt/kafka/bin/kafka-topics.sh --create --topic configuration-topic --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
-        /opt/kafka/bin/kafka-topics.sh --create --topic processed-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
-        /opt/kafka/bin/kafka-topics.sh --create --topic aggregate-topic --bootstrap-server kafka:9092 --partitions 64 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic processed-topic --bootstrap-server kafka:9092 --partitions 4 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --create --topic aggregate-topic --bootstrap-server kafka:9092 --partitions 4 --replication-factor 1
         /opt/kafka/bin/kafka-configs.sh --bootstrap-server kafka:9092 --alter --entity-type topics --entity-name configuration-topic --add-config max.message.bytes=10485880
         echo 'Topics created successfully'
       "
 
   middleware:
     container_name: middleware
-    image: venky01071999/middleware:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.Middleware
     ports:
       - "8000:8000"
     networks:
@@ -71,7 +73,9 @@ services:
 
   jobmanager:
     container_name: flink-jobmanager
-    image: venky01071999/flink-jobmanager:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.Flink
     networks:
       - common-network
     ports:
@@ -82,18 +86,22 @@ services:
 
   taskmanager:
     container_name: flink-taskmanager
-    image: venky01071999/flink-taskmanager:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.Flink
     networks:
       - common-network
     environment:
       JOB_MANAGER_RPC_ADDRESS: jobmanager
-      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "140" #  greater than partition count
-    command: taskmanager -Dtaskmanager.numberOfTaskSlots=140
+      TASKMANAGER_NUMBER_OF_TASK_SLOTS: "12" #  greater than partition count
+    command: taskmanager -Dtaskmanager.numberOfTaskSlots=12
 
 
   submit_job:
     container_name: flink-submit-job
-    image: venky01071999/flink-submit-job:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.Flink
     networks:
       - common-network
     depends_on:

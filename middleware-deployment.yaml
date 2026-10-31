@@ -15,7 +15,7 @@ spec:
           value: kafka:9092
         - name: PROCESSED_TOPIC
           value: processed-topic
-      image: bdacr2025.azurecr.io/middleware:v1
+      image: bdacr2025.azurecr.io/middleware:v2
       name: middleware
       ports:
         - containerPort: 8000
