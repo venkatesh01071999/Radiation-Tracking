@@ -1,6 +1,7 @@
 /app/.env
 /app/middleware/__pycache__
-/app/kafka/Data/*
+app/kafka/Data/partition-1.csv
+app/kafka/Data/processed.csv
 
 # dependencies
 app/frontend/node_modules
