@@ -43,7 +43,7 @@ services:
       
   middleware:
     container_name: middleware
-    image: bdacr2025.azurecr.io/middleware:v1
+    image: bdacr2025.azurecr.io/middleware:v2
     ports:
       - "8000:8000"
     networks:
