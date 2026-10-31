@@ -59,7 +59,9 @@ services:
       CONFIG_TOPIC: configuration-topic
   ui:
     container_name: ui
-    image: venky01071999/ui:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.UI
     ports:
       - "3000:3000"
     networks:
@@ -124,7 +126,9 @@ services:
 
   producer:
     container_name: producer
-    image: venky01071999/producer:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.Kafka
     networks:
       - common-network
     depends_on:

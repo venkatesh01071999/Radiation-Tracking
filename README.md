@@ -1,4 +1,4 @@
-# BD25_Project_M2_C
+# Radiation Tracking
 
 # Local Setup
 ## Steps to setup Kafka
@@ -43,17 +43,8 @@
 
 # Docker Setup
 1) Install Docker from [Docker Website](https://www.docker.com/)
-2) The docker images for the project is under the namespace **venky01071999**.
-3) List of Docker Images
-    1. `venky01071999/producer`
-    2. `venky01071999/flink-submit-job`
-    3. `venky01071999/flink-taskmanager`
-    4. `venky01071999/ui`
-    5. `venky01071999/flink-jobmanager`
-    6. `venky01071999/middleware`
-4) Move to the root of the project.
-5) Pull the images using the commmand `docker-compose pull`
-6) Start the container using `docker-compose up -d`
+2) Move to the root of the project.
+3) Start the container using `docker-compose up -d`
 
 # Cloud Details
 1) The project is deployed in **Azure Cloud Environment**.
