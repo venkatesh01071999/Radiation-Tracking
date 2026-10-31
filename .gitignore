@@ -1,6 +1,6 @@
 /app/.env
 /app/middleware/__pycache__
-
+/app/kafka/Data/*
 
 # dependencies
 app/frontend/node_modules
