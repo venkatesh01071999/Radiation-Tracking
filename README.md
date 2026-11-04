@@ -4,12 +4,12 @@ A real-time pipeline for monitoring and visualizing geospatial radiation reading
 
 # Technologies
 
-Streaming: Apache Kafka (ingestion + topics), kafka producer
-Stream processing: Apache Flink via PyFlink, with Shapely for GeoJSON region filtering
-Middleware: FastAPI with WebSockets (aiokafka)
-Frontend: React, Material UI, and a map view (Leaflet-based) for drawing regions and live updates
-Containerization: Docker, Docker Compose
-Cloud: Azure Kubernetes Service (AKS) and Azure Container Registry (ACR)
+1) Streaming: Apache Kafka (ingestion + topics), kafka producer
+2) Stream processing: Apache Flink via PyFlink, with Shapely for GeoJSON region filtering
+3) Middleware: FastAPI with WebSockets (aiokafka)
+4) Frontend: React, Material UI, and a map view (Leaflet-based) for drawing regions and live updates
+5) Containerization: Docker, Docker Compose
+6) Cloud: Azure Kubernetes Service (AKS) and Azure Container Registry (ACR)
 
 # Local Setup
 ## Steps to setup Kafka
