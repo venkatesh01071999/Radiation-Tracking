@@ -1,5 +1,16 @@
 # Radiation Tracking
 
+A real-time pipeline for monitoring and visualizing geospatial radiation readings on an interactive map. Sensor measurements are streamed through Kafka, processed in real time by Apache Flink which filters and aggregates readings against user-defined regions (GeoJSON). The processed data is pushed to a React map UI over WebSockets via a FastAPI middleware. The whole system is containerized with Docker and deployed on Azure Kubernetes Service (AKS)
+
+# Technologies
+
+Streaming: Apache Kafka (ingestion + topics), kafka producer
+Stream processing: Apache Flink via PyFlink, with Shapely for GeoJSON region filtering
+Middleware: FastAPI with WebSockets (aiokafka)
+Frontend: React, Material UI, and a map view (Leaflet-based) for drawing regions and live updates
+Containerization: Docker, Docker Compose
+Cloud: Azure Kubernetes Service (AKS) and Azure Container Registry (ACR)
+
 # Local Setup
 ## Steps to setup Kafka
 
